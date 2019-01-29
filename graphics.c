@@ -17,8 +17,11 @@ Assignment 1
 
 #include "graphics.h"
 
+GLubyte  world[WORLDX][WORLDY][WORLDZ];
+
 #define MOB_COUNT 10
 #define PLAYER_COUNT 10
+#define TUBE_COUNT 10
 #define ACCELERATION 160
 
 extern void update();
@@ -87,6 +90,14 @@ float playerPosition[MOB_COUNT][4];
 	/* visibility of players, 0 not drawn, 1 drawn */
 short playerVisible[MOB_COUNT];
 
+	/* list of tubes - number of tubes, staring x, y, z position, ending  */
+	/*  x, y, z position */
+float tubeData[TUBE_COUNT][6];
+	/* tube colour for each tube */
+int   tubeColour[TUBE_COUNT];
+	/* visibility of tubes, 0 not drawn, 1 drawn */
+short tubeVisible[TUBE_COUNT];
+
 	/* flag indicating the user wants the cube in front of them removed */
 int space = 0;
         /* flag indicates if map is to be printed */
@@ -128,7 +139,7 @@ void  set2Dcolour(float []);
 	/* player control functions */
 	/* set all player location, rotation, and visibility values to zero */
 void initPlayerArray() {
-int i;
+   int i;
    for (i=0; i<MOB_COUNT; i++) {
       playerPosition[i][0] = 0.0;
       playerPosition[i][1] = 0.0;
@@ -187,7 +198,7 @@ void showPlayer(int number) {
 	/* mob control functions */
 	/* set all mob location, rotation, and visibility values to zero */
 void initMobArray() {
-int i;
+   int i;
    for (i=0; i<MOB_COUNT; i++) {
       mobPosition[i][0] = 0.0;
       mobPosition[i][1] = 0.0;
@@ -242,6 +253,43 @@ void showMob(int number) {
 }
 
 
+	/* initialize all tubes as not visible */
+void initTubeArray(){
+   int i;
+   for (i=0; i<TUBE_COUNT; i++) {
+      tubeVisible[i] = 0;
+   }
+}
+
+void createTube(int number, float bx, float by, float bz,
+	float ex, float ey, float ez, int colour) {
+   tubeData[number][0] = bx;
+   tubeData[number][1] = by;
+   tubeData[number][2] = bz;
+   tubeData[number][3] = ex;
+   tubeData[number][4] = ey;
+   tubeData[number][5] = ez;
+   tubeColour[number] = colour;
+   tubeVisible[number] = 1;
+}
+
+	/* turn off drawing for tube number */
+void hideTube(int number) {
+   if (number >= TUBE_COUNT) {
+      printf("ERROR: tube number greater than %d\n", TUBE_COUNT);
+      exit(1);
+   }
+   tubeVisible[number] = 0;
+}
+
+	/* turn on drawing for tube number */
+void showTube(int number) {
+   if (number >= TUBE_COUNT) {
+      printf("ERROR: tube number greater than %d\n", TUBE_COUNT);
+      exit(1);
+   }
+   tubeVisible[number] = 1;
+}
 
 
 	/* allows user to set position of the light */
@@ -356,9 +404,8 @@ void init (void)
 
 }
 
-	/* draw cube in world[i][j][k] */
-void drawCube(int i, int j, int k) {
-
+	/* pass in the number representing the colour, sets OpenGL materials */
+void setObjectColour(int colourID) {
 	/* predefined colours */
 GLfloat blue[]  = {0.0, 0.0, 1.0, 1.0};
 GLfloat red[]   = {1.0, 0.0, 0.0, 1.0};
@@ -368,7 +415,6 @@ GLfloat purple[]   = {1.0, 0.0, 1.0, 1.0};
 GLfloat orange[]   = {1.0, 0.64, 0.0, 1.0};
 GLfloat white[] = {1.0, 1.0, 1.0, 1.0};
 GLfloat black[] = {0.0, 0.0, 0.0, 1.0};
-
 GLfloat dblue[]  = {0.0, 0.0, 0.5, 1.0};
 GLfloat dred[]   = {0.5, 0.0, 0.0, 1.0};
 GLfloat dgreen[] = {0.0, 0.5, 0.0, 1.0};
@@ -376,50 +422,58 @@ GLfloat dyellow[]   = {0.5, 0.5, 0.0, 1.0};
 GLfloat dpurple[]   = {0.5, 0.0, 0.5, 1.0};
 GLfloat dorange[]   = {0.5, 0.32, 0.0, 1.0};
 
-
-		/* select colour based on value in the world array */
-   glMaterialfv(GL_FRONT, GL_SPECULAR, white);
-
 	/* system defined colours are numbers 1 to 8 */
 	/* user defined colours are 9-99 */
-   if (world[i][j][k] == 1) {
+   if (colourID == 1) {
       glMaterialfv(GL_FRONT, GL_AMBIENT, dgreen);
       glMaterialfv(GL_FRONT, GL_DIFFUSE, green);
    }
-   else if (world[i][j][k] == 2) { 
+   else if (colourID == 2) { 
       glMaterialfv(GL_FRONT, GL_AMBIENT, dblue);
       glMaterialfv(GL_FRONT, GL_DIFFUSE, blue);
    }
-   else if (world[i][j][k] == 3) {
+   else if (colourID == 3) {
       glMaterialfv(GL_FRONT, GL_AMBIENT, dred);
       glMaterialfv(GL_FRONT, GL_DIFFUSE, red);
    }
-   else if (world[i][j][k] == 4) {
+   else if (colourID == 4) {
       glMaterialfv(GL_FRONT, GL_AMBIENT_AND_DIFFUSE, black);
    }
-   else if (world[i][j][k] == 5) {
+   else if (colourID == 5) {
       glMaterialfv(GL_FRONT, GL_AMBIENT_AND_DIFFUSE, white);
    }
-   else if (world[i][j][k] == 6) {
+   else if (colourID == 6) {
       glMaterialfv(GL_FRONT, GL_AMBIENT, dpurple);
       glMaterialfv(GL_FRONT, GL_DIFFUSE, purple);
    }
-   else if (world[i][j][k] == 7) { 
+   else if (colourID == 7) { 
       glMaterialfv(GL_FRONT, GL_AMBIENT, dorange);
       glMaterialfv(GL_FRONT, GL_DIFFUSE, orange);
    }
-   else if (world[i][j][k] == 8) { 
+   else if (colourID == 8) { 
       glMaterialfv(GL_FRONT, GL_AMBIENT, dyellow);
       glMaterialfv(GL_FRONT, GL_DIFFUSE, yellow);
    } else {
-      if (uColourUsed[ world[i][j][k] ] != 1) {
+		/* user define colour */
+      if (uColourUsed[ colourID ] != 1) {
          printf("ERROR, attempt to access colour which is not allocated.\n");
       }
 		/* user defined colours, look up the RGBA colour values */
 		/* for the world value in the user defined colour array */
-      glMaterialfv(GL_FRONT, GL_AMBIENT, uAmbColour[ world[i][j][k] ]);
-      glMaterialfv(GL_FRONT, GL_DIFFUSE, uDifColour[ world[i][j][k] ]);
+      glMaterialfv(GL_FRONT, GL_AMBIENT, uAmbColour[ colourID ]);
+      glMaterialfv(GL_FRONT, GL_DIFFUSE, uDifColour[ colourID ]);
    }
+}
+
+
+	/* draw cube in world[i][j][k] */
+void drawCube(int i, int j, int k) {
+
+GLfloat white[] = {1.0, 1.0, 1.0, 1.0};
+   glMaterialfv(GL_FRONT, GL_SPECULAR, white);
+
+		/* select colour based on value in the world array */
+   setObjectColour(world[i][j][k]);
 
    glPushMatrix ();
 	/* offset cubes by 0.5 so the centre of the */
@@ -441,7 +495,7 @@ GLfloat gray[] = {0.3, 0.3, 0.3, 1.0};
 GLfloat white[] = {1.0, 1.0, 1.0, 1.0};
 int i, j, k;
 
-   buildDisplayList();
+   
    glClear (GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 	/* position viewpoint based on mouse rotation and keyboard 
@@ -464,6 +518,8 @@ int i, j, k;
       glTranslatef(vpx, vpy - 0.5, vpz);
    //   glTranslatef(vpx, vpy, vpz);
    }
+
+   buildDisplayList();
 
 
 	/* set viewpoint light position */
@@ -544,6 +600,31 @@ int i, j, k;
          glutSolidSphere(0.1, 4, 4);
          glTranslatef(-0.6, 0.0, 0.0);
          glutSolidSphere(0.1, 4, 4);
+         glPopMatrix();
+      }
+   }
+
+   /* draw tubes in the world */
+   for(i=0; i<TUBE_COUNT; i++) {
+      if (tubeVisible[i] == 1) {
+         glPushMatrix();
+         setObjectColour(tubeColour[i]);
+         glBegin(GL_QUADS);
+         glVertex3f(tubeData[i][0]-0.1, tubeData[i][1], tubeData[i][2]);
+         glVertex3f(tubeData[i][0]+0.1, tubeData[i][1], tubeData[i][2]);
+         glVertex3f(tubeData[i][3]+0.1, tubeData[i][4], tubeData[i][5]);
+         glVertex3f(tubeData[i][3]-0.1, tubeData[i][4], tubeData[i][5]);
+
+         glVertex3f(tubeData[i][0], tubeData[i][1]-0.1, tubeData[i][2]);
+         glVertex3f(tubeData[i][0], tubeData[i][1]+0.1, tubeData[i][2]);
+         glVertex3f(tubeData[i][3], tubeData[i][4]+0.1, tubeData[i][5]);
+         glVertex3f(tubeData[i][3], tubeData[i][4]-0.1, tubeData[i][5]);
+
+         glVertex3f(tubeData[i][0], tubeData[i][1], tubeData[i][2]-0.1);
+         glVertex3f(tubeData[i][0], tubeData[i][1], tubeData[i][2]+0.1);
+         glVertex3f(tubeData[i][3], tubeData[i][4], tubeData[i][5]+0.1);
+         glVertex3f(tubeData[i][3], tubeData[i][4], tubeData[i][5]-0.1);
+         glEnd();
          glPopMatrix();
       }
    }
@@ -866,6 +947,7 @@ int i, fullscreen;
 	/* initialize mob and player array to empty */
    initMobArray();
    initPlayerArray();
+   initTubeArray();
 
 	/* initialize all user defined colours as unused == 0  */
    for (i=0; i<NUMBERCOLOURS; i++)

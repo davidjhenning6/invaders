@@ -17,9 +17,7 @@ Assignment 1
 ******************************************** 2. Momentum this has not been started ********************************************
 
     --------------------Active--------------------
-    ACTIVE->movement speeds out of control when a key is held for more than 3 seconds caused by ratio!!!!
-        solution idea check difference when setting update position to limit it to a maximum amount 
-        could even be implemented in the setter theoretically
+    
 
     ---------------------DONE---------------------
     X-> speed has been altered but momentum has not been implemented
@@ -36,6 +34,10 @@ Assignment 1
 
     DONE->momentum can end shorter than expected as the count starts midflight and ends when the count is done not at the final push of 'w''a''s''d'
 
+    DONE->movement speeds out of control when a key is held for more than 3 seconds caused by ratio!!!!
+        solution idea check difference when setting update position to limit it to a maximum amount 
+        could even be implemented in the setter theoretically
+
    ---------------------Note---------------------
     
    new patch momentum slows into stop 
@@ -44,11 +46,11 @@ Assignment 1
     ---------------------DONE---------------------
     note** colours created in the else{} of main
 
-
-
-
 //note f controls vertical movement, it can be turned off
-
 
 !!!!!!!!!!!!time limiter on update needs to be implemented but first attempt caused issues 
 time.h's time(NULL) may not be accurate enough!
+
+
+
+
