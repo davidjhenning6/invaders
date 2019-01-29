@@ -26,6 +26,7 @@ Assignment 1
 
 extern GLubyte  world[WORLDX][WORLDY][WORLDZ];
 
+
 	/* mouse function called by GLUT when a button is pressed or released */
 void mouse(int, int, int, int);
 
