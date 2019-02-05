@@ -54,3 +54,88 @@ time.h's time(NULL) may not be accurate enough!
 
 
 
+/**************
+Dave Henning
+cis4820
+Assignment 2
+***************/
+
+
+******************************************** 1. Timing ********************************************
+    --------------------Active--------------------
+    ---------------------DONE---------------------
+    sys/timeb.h was used to slow the amount of times gravity and momentum is called inside of update()
+    - 25 miliseconds has elapsed since the last call
+    - time.h was kept for rand in main
+    - gravityRate was changed to 0.4 to make gravity a playable speed while keeping momentum useable since it relys on a fairly high update speed
+
+********************************************  2. Acceleration ********************************************
+    --------------------Active--------------------
+    ---------------------DONE---------------------
+    this was done in the previous iteration with momentum
+
+
+******************************************** 3. Firing a ray in the viewpoint direction. ********************************************
+    --------------------Active--------------------
+    - Launch a ray from the viewpoint. It should travel in the direction which the viewpoint was facing when it is launched.
+    - the Tube functions need to be used to draw and hide the ray
+
+
+
+
+
+
+> 
+> Use the Tube functions to draw and hide the ray. You can use the
+> getView*Position() functions to calculate the starting and ending points
+> for the ray.
+> 
+> Use the let mouse button to activate the ray. Time the duration of the
+> ray so that it is visible long enough for the marker to see it.
+> At the end of this time the ray should no longer be drawn.
+> 
+> The mouse() function allows you to respond to button press and release
+> events on the mouse. Remove the existing printf's from the mouse() function
+> in your final submission. They are there to help understand the function and
+> are not meant to be part of the final system.  
+> 
+> The end of the ray can go outside the border of the world space (when
+> 0>x>99 or 0>z>99 or 0>y>49).
+> 
+> If the ray intersects a cube containing a human then your program
+> should print a message to stdout indicating the ray-human collision.
+
+
+
+    ---------------------DONE---------------------
+
+    
+******************************************** 4. Displaying a Two Dimensional World Map ********************************************
+    --------------------Active--------------------
+
+    - map at 1 displays small map in upper right corner
+        - When a ray is fired it should be drawn on the map while it exists
+
+    - map at 2 displays a large map over the screen
+        - When a ray is fired it should be drawn on the map while it exists
+
+    control direction the triangle points
+
+    ---------------------DONE---------------------
+
+     - map at 0 displays no map
+
+    - map at 1 displays small map in upper right corner
+        - people are shown as squares
+        - player is shown as a triangle which needs to be constantly updated
+        - map is a square with borders that reflects the games xz coordinates
+
+    - map at 2 displays a large map over the screen
+        - people are shown as squares
+        - player is shown as a triangle which needs to be constantly updated
+        - map is a square with borders that reflects the games xz coordinates
+
+    - the screenWidth and screenHeight variables need be used to scale the size of the maps when the window size is changed.   
+
+    
+    

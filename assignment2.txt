@@ -1,0 +1,124 @@
+> Assignment 2 - Timing, Acceleration, Rays, and Maps
+> ---------------------------------------------------
+> Due. February 8, 2019
+> 
+> There are four parts to this assignment. They build on assignment 1. 
+> 
+> 
+> 1. Timing
+> ---------
+> The update() function is called by OpenGL. This is used for
+> the animations. If the updates to the screen are allowed to run
+> freely then the speed of the animation will depend on how often
+> the function is called. Faster computers will have faster animations.
+> 
+> To avoid this you need to use real time to schedule updates to the
+> animated objects. Use real time to update the animations on a
+> fixed time schedule.  You should check the current time with each
+> call to update() and only change the animation if enough time has
+> passed since the previous change. Do not use sleep() for this operation.
+> 
+> 
+> 2. Acceleration
+> ---------------
+> Add viewpoint acceleration so that the velocity of the viewpoint
+> increases when it begins moving.
+> 
+> Pick a reasonable maximum velocity so that the game does not become
+> unplayable because the viewpoint is moving too quickly. Select an
+> acceleration that is easy for the marker to see when testing the
+> program.
+> 
+> 
+> 3. Firing a ray in the viewpoint direction.
+> -------------------------------------------
+> Launch a ray from the viewpoint. It should travel in the direction
+> which the viewpoint was facing when it is launched.
+> 
+> Use the Tube functions to draw and hide the ray. You can use the
+> getView*Position() functions to calculate the starting and ending points
+> for the ray.
+> 
+> Use the let mouse button to activate the ray. Time the duration of the
+> ray so that it is visible long enough for the marker to see it.
+> At the end of this time the ray should no longer be drawn.
+> 
+> The mouse() function allows you to respond to button press and release
+> events on the mouse. Remove the existing printf's from the mouse() function
+> in your final submission. They are there to help understand the function and
+> are not meant to be part of the final system.  
+> 
+> The end of the ray can go outside the border of the world space (when
+> 0>x>99 or 0>z>99 or 0>y>49).
+> 
+> If the ray intersects a cube containing a human then your program
+> should print a message to stdout indicating the ray-human collision.
+> 
+> 
+> 4. Displaying a Two Dimensional World Map
+> -----------------------------------------
+> 
+> Use the draw2D() function draw two dimensional maps on the
+> screen. The map should show the boundary of the world, the
+> player's current location, and the locations of the humans on the ground.
+> The maps should display the x and z coordinates of the world. It does
+> not need to show elevation in the y axis.
+> 
+> The int displayMap variable will be used to indicate what type of map will
+> be displayed. When:
+>         displayMap == 0,  no map is displayed
+>         displayMap == 1,  a small world map in the upper corner is drawn
+>         displayMap == 2,  a large world map is displayed in the middle of the
+>                           screen is drawn
+> The value of displayMap is cycled through using the m key.
+> 
+> You can use the draw2D*() functions to drawn lines, boxes, and triangles.
+> The set2Dcolour() function lets you set the colour of the shapes.
+> These are described in the readme.txt file.
+> 
+> Draw lines to indicate the boundary of the map and draw a triangle to
+> indicate the players location on the map. When a ray is fired it should
+> be drawn on the map while it exists. Drawn the humans on the map using
+> a square.
+> 
+> You should use the screenWidth and screenHeight variables to
+> scale the size of the maps when the window size is changed.
+> 
+> 
+> Coding Practices
+> ----------------
+> Write the code using standard stylistic practices. Use functions, 
+> reasonable variable names, and consistent indentation.
+> If the code is difficult for the TA to understand then you
+> will lose marks.
+> 
+> As usual, keep backups of your work using source control software.
+> 
+> 
+> Starting Code
+> -------------
+> The starting code is available on the Courselink site.
+> You can untar the file using tar xzf filename.
+> All of the changes to the code can be made in the a1.c file.
+> 
+> Note that the graphics code may be modified for later assignments. If you
+> make changes to the graphics code (in graphics.c or visible.c) then you
+> may have to recode the changes for a later assignment.
+>   
+> 
+> Submitting the Assignment
+> -------------------------
+> Submit the assignment using Courselink. Submit only the source code
+> and the makefile. Bundle the code in a tar file.
+> 
+> Include a makefile that will compile the executable. Name the executable a1.
+>  
+> The TA will unpack your code and type "make". They will then try to
+> run an executable named "./a1".  If the make command or executing a1
+> does not work then you will lose a substantial number of marks.
+> 
+> You should unpack and test the file you are submitting to be sure
+> that what you submit actually compiles and executes. 
+  
+  
+  

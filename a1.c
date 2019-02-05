@@ -16,10 +16,11 @@ Assignment 1
 #include <stdlib.h>
 #include <string.h>
 #include <math.h>
+#include <sys/timeb.h>
 #include <time.h>
 
 #define BODY_COUNT 100
-#define ACCELERATION 160
+#define ACCELERATION 100
 
 
 #include "graphics.h"
@@ -142,8 +143,8 @@ float ratioZ = 0.0;
 momentus movement;
 
  /*time variable to curb the amount of time uodate happens*/
-time_t oldT;
-time_t newT;
+struct timeb oldT;
+struct timeb newT;
 
 
 
@@ -199,7 +200,7 @@ void collisionResponse() {
 
    //to keep within field of play
    //check if x y or z exceed 99 or 49 respectively or if its below 0
-   if( x > 99 || x < 0 || z > 99 || z < 0 || y < 0 || y > 49){
+   if( x > 100 || x < 0 || z > 100 || z < 0 || y < 0 || y > 49){
       count = ACCELERATION;
       float oldX, oldY, oldZ;
       oldX = 0.0;
@@ -246,8 +247,119 @@ void draw2D() {
          draw2Dbox(500, 380, 524, 388);
       }
    } else {
-
 	/* your code goes here */
+
+      int i = 0;
+      int x = 0;
+      int z = 0;
+      float py = 0;
+      float px = 0;
+      float pz = 0;
+      int bigMapX = 1;
+      int bigMapZ = 1;
+
+      GLfloat red[] = {0.5, 0.0, 0.0, 1};
+      GLfloat black[] = {0.0, 0.0, 0.0, 0.5};
+      GLfloat white[] = {1, 1, 1, 1};
+      set2Dcolour(black);
+
+      if (displayMap == 1) {
+      
+      //draw character position on the map
+      set2Dcolour(white);
+
+      getViewPosition(&px, &py, &pz);
+      px *= -2;
+      pz *= -2;
+      py *= -2;
+
+      //format x, z(y) , x, z(y), x, z(y)
+      draw2Dtriangle(screenWidth - (220 - px), screenHeight - (220 - pz), screenWidth - (218 - px), screenHeight - (226 - pz), screenWidth - (222-px), screenHeight - (226-pz));
+         
+      //draw all the humans on the map
+         set2Dcolour(red);
+         for(i = 0; i < BODY_COUNT; i++){
+            x = fodder[i].head.x * 2;
+            z = fodder[i].head.z * 2;
+            draw2Dbox(screenWidth - (220 - x), screenHeight - (220 - z), screenWidth - (218 - x), screenHeight - (218 - z));
+         }
+         
+      //draw the map background must be done last as the first thing drawn is drawn ontop
+         set2Dcolour(white);
+         draw2Dline(screenWidth - 19, screenHeight - 19, screenWidth - 221, screenHeight - 19, 2);
+         draw2Dline(screenWidth - 221, screenHeight - 19, screenWidth - 221, screenHeight - 221, 2);
+         draw2Dline(screenWidth - 221, screenHeight - 221, screenWidth - 19, screenHeight - 221, 2);
+         draw2Dline(screenWidth - 19, screenHeight - 221, screenWidth - 19, screenHeight - 19, 2);
+
+         set2Dcolour(black);
+         draw2Dbox(screenWidth - 20, screenHeight - 20, screenWidth - 220, screenHeight - 220);
+
+      }
+      if (displayMap == 2) {///////////////////////////////////////////////////////////////////////////
+
+      //draw character position on the map
+         set2Dcolour(white);
+         getViewPosition(&px, &py, &pz);
+         px *= -1;
+         pz *= -1;
+         py *= -1;
+         //printf("px = %lf, pz = %lf\n", px, pz);
+         if(px >= 49){
+               px = (px-49) * 6;
+               // bigMapX = 3;
+            }
+            else{
+               px = (49-px) * (-6);
+               //bigMapX = -3;
+            }
+            if(pz >= 49){
+               pz = (pz-49)* 6;
+               //bigMapZ = 3;
+            }
+            else{
+               pz = (49-pz) * (-6);
+               //bigMapZ = -1;
+            }
+         // //format x, z(y) , x, z(y), x, z(y)
+         draw2Dtriangle(screenWidth/2 + (px), screenHeight/2 + (pz), screenWidth/2 + (px+3), screenHeight/2 + (pz-10), screenWidth/2 + (px-3), screenHeight/2 + (pz-10));
+
+      //draw all the humans on the map
+         set2Dcolour(red);
+         for(i = 0; i < BODY_COUNT; i++){
+            x = fodder[i].head.x;
+            z = fodder[i].head.z;
+
+            if(x >= 49){
+               x = (x-49) * 6;
+               // bigMapX = 3;
+            }
+            else{
+               x = (49-x) * (-6);
+               //bigMapX = -3;
+            }
+            if(z >= 49){
+               z = (z-49)* 6;
+               //bigMapZ = 3;
+            }
+            else{
+               z = (49-z) * (-6);
+               //bigMapZ = -1;
+            }
+            draw2Dbox( (screenWidth/2) + x - 3, (screenHeight/2) + z - 3, (screenWidth/2) + x + 3 , (screenHeight/2) + z + 3);
+         }
+
+
+      //base colour and border of map
+         set2Dcolour(white);
+         draw2Dline(screenWidth/2 - 303, screenHeight/2 + 303, screenWidth/2 + 303, screenHeight/2 + 303, 2);
+         draw2Dline(screenWidth/2 + 303, screenHeight/2 - 303, screenWidth/2 + 303, screenHeight/2 + 303, 2);
+         draw2Dline(screenWidth/2 - 303, screenHeight/2 - 303, screenWidth/2 - 303, screenHeight/2 + 303, 2);
+         draw2Dline(screenWidth/2 - 303, screenHeight/2 - 303, screenWidth/2 + 303, screenHeight/2 - 303, 2);
+         set2Dcolour(black);
+         draw2Dbox(screenWidth/2 - 303, screenHeight/2 - 303, screenWidth/2 + 303, screenHeight/2 + 303);
+         
+      }
+
 
    }
 
@@ -328,13 +440,19 @@ void update() {
 
 	/* your code goes here */
 
-      newT = time(NULL);
+      ftime(&newT);
 
    /* newT should be checked here to curb framerate */
-      if( newT >= oldT){
-         oldT = newT;
+      float diff = 0.0;
+      diff = newT.millitm - oldT.millitm;
+      //printf("%lf\n", diff);
+      //diff *= 1000;
+
+      if( diff > 25 || diff < -25){
+         ftime(&oldT);
+         //oldT.time = newT.time;
          /****** Gravity ******/
-         float gravityRate = 0.2;
+         float gravityRate = 0.4;
          for( loop = 0; loop < BODY_COUNT; loop++){
             //x value will piggyback onto loop
 
@@ -612,7 +730,7 @@ int main(int argc, char** argv){
       fp = fopen("ground.pgm", "r");
 
       time_t t;
-      oldT = time(NULL);
+      ftime(&oldT);
       srand((unsigned) time(&t));
 
       int loop;
