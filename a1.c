@@ -26,6 +26,8 @@ Assignment 1
 #include "graphics.h"
 
 extern GLubyte  world[WORLDX][WORLDY][WORLDZ];
+extern float tubeData[TUBE_COUNT][6];
+extern short tubeVisible[TUBE_COUNT];
 
 
 	/* mouse function called by GLUT when a button is pressed or released */
@@ -120,7 +122,7 @@ extern void hideTube(int);
 extern void initTubeArray();
 
 // int is the number of tube to turn invisible
-extern void hideTube(int);
+//extern void hideTube(int);
 
 /********* end of extern tube declarations **************/
 
@@ -167,7 +169,7 @@ struct timeb oldT;
 struct timeb newT;
 
 //func def for a2 for firing a tube called in mouse
-
+int rayCount = 0;
 //left mouse button clicked
 void fireTube(){
 
@@ -177,78 +179,39 @@ void fireTube(){
    float ax, ay, az;
    double radY, radX;
 
-   float ex, ey, ez;
-   // ex = 0;
-   // ey = 0;
-   // ez = 0;
+   //float ex, ey, ez;
+
    getViewPosition(&x, &y, &z);
    x *= -1;
    y *= -1;
    z *= -1;
-   //printf("%lf %lf, %lf ", x, y, z);
+
 
    getViewOrientation(&rotX, &rotY, &rotZ);
-   //getMotion(&rotX, &rotY);
-
-   //printf("x %lf, y %lf, z %lf\n", rotX, rotY, rotZ);
-
-
-
-   //printf("pre calc %lf %lf %lf \n", rotX, rotY, rotZ);
-   // if(rotY> 180 || rotY<360){
-   //    rotY*=-1;
-   // }
 
    radY = rotY / 180.0 * 3.141592;
    radX = rotX / 180.0 * 3.141592;
 
    ax -= sin(radY) * 30.0;
-   ay += sin(radX) * 30.0;          ///original value is 0.3
+   ay += sin(radX) * 30.0;         
    az += cos(radY) * 30.0;
 
-
-   // ax -= sin(radY);
-   // ay += sin(radX);
-   // az += cos(radY);
- 
-   //slopeY = (ay / ax);// m = y/x
-   //printf("y angle calc %lf %lf %lf \n", ax, ay, slopeY);
-
-   // ax = cos(radX);
-   // ay = sin(radX);
-   // slopeX = (ay / ax);// m = y/x
-   //printf("angle calc %lf %lf %lf \n", ax, ay, az);
-
-
-   // ax *= 3;
-   // ay *= 3;
-   // az *= 3;
-
-
-
-
-   // rotX = x + (3*(x * slopeX));
-   // rotY = y + (3*(y * slopeY));
-   // rotZ = 0;//x + (20 * ez);
-
-   // printf("post calc %lf %lf %lf \n", rotX, rotY, rotZ);
 
    ax = x - ax;
    ay = y - ay;
    az = z - az;
 
 
-   createTube(1, x, y+0.4, z, ax, ay+0.4, az, 2);
+   createTube(rayCount, x, y+0.4, z, ax, ay+0.4, az, 2);
    //createTube(1, x, y, 20, 60, 20, 60, 2);
-
+   rayCount++;
+   if(rayCount == TUBE_COUNT){
+      rayCount = 0;
+   }
 
 
    return;
 }
-
-
-
-
 
 
 	/*** collisionResponse() ***/
@@ -347,6 +310,11 @@ void draw2D() {
    } else {
 	/* your code goes here */
 
+      //loop for rays
+      int rayLoop;
+      int rayBX, rayBZ, rayEX, rayEZ;
+
+      //variables
       int i = 0;
       int x = 0;
       int z = 0;
@@ -362,19 +330,33 @@ void draw2D() {
       set2Dcolour(black);
 
       if (displayMap == 1) {
-      
-      //draw character position on the map
-      set2Dcolour(white);
+   //draw character position on the map
+         set2Dcolour(white);
 
-      getViewPosition(&px, &py, &pz);
-      px *= -2;
-      pz *= -2;
-      py *= -2;
+         getViewPosition(&px, &py, &pz);
+         px *= -2;
+         pz *= -2;
+         py *= -2;
 
-      //format x, z(y) , x, z(y), x, z(y)
-      draw2Dtriangle(screenWidth - (220 - px), screenHeight - (220 - pz), screenWidth - (218 - px), screenHeight - (226 - pz), screenWidth - (222-px), screenHeight - (226-pz));
+         //format x, z(y) , x, z(y), x, z(y)
+         draw2Dtriangle(screenWidth - (220 - px), screenHeight - (220 - pz), screenWidth - (218 - px), screenHeight - (226 - pz), screenWidth - (222-px), screenHeight - (226-pz));
+   //draw rays on the map
+         set2Dcolour(white);
          
-      //draw all the humans on the map
+         for(rayLoop=0; rayLoop < TUBE_COUNT; rayLoop++){
+            if(tubeVisible[rayLoop] == 1){
+               //printf("tubevisible %d\n", rayLoop);
+               rayBX = tubeData[rayLoop][0] * 2;
+               rayBZ = tubeData[rayLoop][2] * 2;
+               rayEX = tubeData[rayLoop][3] * 2;
+               rayEZ = tubeData[rayLoop][5] * 2;
+               draw2Dline(screenWidth - (220 - rayBX), screenHeight - (220 - rayBZ), screenWidth - (220 - rayEX), screenHeight - (220 - rayEZ), 2);
+
+
+            }
+         }      
+   
+   //draw all the humans on the map
          set2Dcolour(red);
          for(i = 0; i < BODY_COUNT; i++){
             x = fodder[i].head.x * 2;
@@ -382,7 +364,7 @@ void draw2D() {
             draw2Dbox(screenWidth - (220 - x), screenHeight - (220 - z), screenWidth - (218 - x), screenHeight - (218 - z));
          }
          
-      //draw the map background must be done last as the first thing drawn is drawn ontop
+   //draw the map background must be done last as the first thing drawn is drawn ontop
          set2Dcolour(white);
          draw2Dline(screenWidth - 19, screenHeight - 19, screenWidth - 221, screenHeight - 19, 2);
          draw2Dline(screenWidth - 221, screenHeight - 19, screenWidth - 221, screenHeight - 221, 2);
@@ -393,9 +375,13 @@ void draw2D() {
          draw2Dbox(screenWidth - 20, screenHeight - 20, screenWidth - 220, screenHeight - 220);
 
       }
+   //big map
       if (displayMap == 2) {///////////////////////////////////////////////////////////////////////////
+         //loop for rays
+         int rayLoop;
+         int rayBX, rayBZ, rayEX, rayEZ;
 
-      //draw character position on the map
+   //draw character position on the map
          set2Dcolour(white);
          getViewPosition(&px, &py, &pz);
          px *= -1;
@@ -403,25 +389,71 @@ void draw2D() {
          py *= -1;
          //printf("px = %lf, pz = %lf\n", px, pz);
          if(px >= 49){
-               px = (px-49) * 6;
-               // bigMapX = 3;
-            }
-            else{
-               px = (49-px) * (-6);
-               //bigMapX = -3;
-            }
-            if(pz >= 49){
-               pz = (pz-49)* 6;
-               //bigMapZ = 3;
-            }
-            else{
-               pz = (49-pz) * (-6);
-               //bigMapZ = -1;
-            }
+            px = (px-49) * 6;
+            // bigMapX = 3;
+         }
+         else{
+            px = (49-px) * (-6);
+            //bigMapX = -3;
+         }
+         if(pz >= 49){
+            pz = (pz-49)* 6;
+            //bigMapZ = 3;
+         }
+         else{
+            pz = (49-pz) * (-6);
+            //bigMapZ = -1;
+         }
          // //format x, z(y) , x, z(y), x, z(y)
          draw2Dtriangle(screenWidth/2 + (px), screenHeight/2 + (pz), screenWidth/2 + (px+3), screenHeight/2 + (pz-10), screenWidth/2 + (px-3), screenHeight/2 + (pz-10));
+   //draw all the rays on the map
+         set2Dcolour(white);
+         for(rayLoop=0; rayLoop < TUBE_COUNT; rayLoop++){
+            if(tubeVisible[rayLoop] == 1){
+               //printf("tubevisible %d\n", rayLoop);
+               rayBX = tubeData[rayLoop][0];
+               rayBZ = tubeData[rayLoop][2];
+               rayEX = tubeData[rayLoop][3];
+               rayEZ = tubeData[rayLoop][5];
+               if(rayBX >= 49){
+                  rayBX = (rayBX-49) * 6;
+                  // bigMapX = 3;
+               }
+               else{
+                  rayBX = (49-rayBX) * (-6);
+                  //bigMapX = -3;
+               }
+               if(rayBZ >= 49){
+                  rayBZ = (rayBZ-49)* 6;
+                  //bigMapZ = 3;
+               }
+               else{
+                  rayBZ = (49-rayBZ) * (-6);
+                  //bigMapZ = -1;
+               }
+               if(rayEX >= 49){
+                  rayEX = (rayEX-49) * 6;
+                  // bigMapX = 3;
+               }
+               else{
+                  rayEX = (49-rayEX) * (-6);
+                  //bigMapX = -3;
+               }
+               if(rayEZ >= 49){
+                  rayEZ = (rayEZ-49)* 6;
+                  //bigMapZ = 3;
+               }
+               else{
+                  rayEZ = (49-rayEZ) * (-6);
+                  //bigMapZ = -1;
+               }
 
-      //draw all the humans on the map
+               draw2Dline(screenWidth/2 + (rayBX), screenHeight/2 + (rayBZ), screenWidth/2 + (rayEX), screenHeight/2 + (rayEZ), 2);
+
+
+            }
+         }
+   //draw all the humans on the map
          set2Dcolour(red);
          for(i = 0; i < BODY_COUNT; i++){
             x = fodder[i].head.x;
@@ -447,7 +479,7 @@ void draw2D() {
          }
 
 
-      //base colour and border of map
+   //base colour and border of map
          set2Dcolour(white);
          draw2Dline(screenWidth/2 - 303, screenHeight/2 + 303, screenWidth/2 + 303, screenHeight/2 + 303, 2);
          draw2Dline(screenWidth/2 + 303, screenHeight/2 - 303, screenWidth/2 + 303, screenHeight/2 + 303, 2);

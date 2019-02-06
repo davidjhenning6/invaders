@@ -80,9 +80,9 @@ Assignment 2
     - ray has been launched though it seems to have trouble following the y axis when the player looks up similar to what happens when you move
     - ray may need to be drawn peice by peice and appear to grow
 
-    - add the ability for more than one ray to form
     - remove ray after a time 
         -> ** perhaps a call in update **
+        -- images on phone explaining how to do that
     - a message needs to be printed to stdout when a ray intersect with a human a simple message is fine its not implicitly specified
 
     ---------------------DONE---------------------
@@ -94,15 +94,20 @@ Assignment 2
     solved equation done
         -- current major problem is that c's math.h uses radians for sin and cos so i need to convert my angles to make it work
 
+    - add the ability for more than one ray to form
+        -- capped at 10 max on screen at a time
+
     
 ******************************************** 4. Displaying a Two Dimensional World Map ********************************************
     --------------------Active--------------------
 
     - map at 1 displays small map in upper right corner
         - When a ray is fired it should be drawn on the map while it exists
+            --rays appear however ask if the rays should end at the edges of the map or not **
 
     - map at 2 displays a large map over the screen
         - When a ray is fired it should be drawn on the map while it exists
+            --rays appear however ask if the rays should end at the edges of the map or not **
 
     Stretch goal -> control direction the triangle points
 
