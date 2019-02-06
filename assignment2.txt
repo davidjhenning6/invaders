@@ -39,7 +39,7 @@
 > getView*Position() functions to calculate the starting and ending points
 > for the ray.
 > 
-> Use the let mouse button to activate the ray. Time the duration of the
+> Use the left mouse button to activate the ray. Time the duration of the
 > ray so that it is visible long enough for the marker to see it.
 > At the end of this time the ray should no longer be drawn.
 > 

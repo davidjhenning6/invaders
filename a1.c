@@ -21,7 +21,7 @@ Assignment 1
 
 #define BODY_COUNT 100
 #define ACCELERATION 100
-
+#define TUBE_COUNT 10
 
 #include "graphics.h"
 
@@ -106,6 +106,26 @@ extern void getUserColour(int, GLfloat *, GLfloat *, GLfloat *, GLfloat *,
 
 
 
+/********* start of extern tube declarations **************/
+//max number of tubes is 10
+
+//int number, float bx, float by, float bz, float ex, float ey, float ez, int colour
+//b stands for beginning and e stands for end, when create is called the tube is auto set to showing
+extern void createTube(int , float , float , float , float , float , float , int);
+
+//int is the number of tube it is
+extern void hideTube(int);
+
+//this function turns all tubes to invisible
+extern void initTubeArray();
+
+// int is the number of tube to turn invisible
+extern void hideTube(int);
+
+/********* end of extern tube declarations **************/
+
+extern void getMotion(float* , float*);
+
 //human struct
 
 // i could make these floats and cast them as ints in the gravity that way they will move every 10 iterations in the world after being cast as opposed to moving 1 cube per iteration
@@ -146,7 +166,85 @@ momentus movement;
 struct timeb oldT;
 struct timeb newT;
 
+//func def for a2 for firing a tube called in mouse
 
+//left mouse button clicked
+void fireTube(){
+
+   float x, y, z;
+   float rotX, rotY, rotZ;
+   float slopeY, slopeX;
+   float ax, ay, az;
+   double radY, radX;
+
+   float ex, ey, ez;
+   // ex = 0;
+   // ey = 0;
+   // ez = 0;
+   getViewPosition(&x, &y, &z);
+   x *= -1;
+   y *= -1;
+   z *= -1;
+   //printf("%lf %lf, %lf ", x, y, z);
+
+   getViewOrientation(&rotX, &rotY, &rotZ);
+   //getMotion(&rotX, &rotY);
+
+   //printf("x %lf, y %lf, z %lf\n", rotX, rotY, rotZ);
+
+
+
+   //printf("pre calc %lf %lf %lf \n", rotX, rotY, rotZ);
+   // if(rotY> 180 || rotY<360){
+   //    rotY*=-1;
+   // }
+
+   radY = rotY / 180.0 * 3.141592;
+   radX = rotX / 180.0 * 3.141592;
+
+   ax -= sin(radY) * 30.0;
+   ay += sin(radX) * 30.0;          ///original value is 0.3
+   az += cos(radY) * 30.0;
+
+
+   // ax -= sin(radY);
+   // ay += sin(radX);
+   // az += cos(radY);
+ 
+   //slopeY = (ay / ax);// m = y/x
+   //printf("y angle calc %lf %lf %lf \n", ax, ay, slopeY);
+
+   // ax = cos(radX);
+   // ay = sin(radX);
+   // slopeX = (ay / ax);// m = y/x
+   //printf("angle calc %lf %lf %lf \n", ax, ay, az);
+
+
+   // ax *= 3;
+   // ay *= 3;
+   // az *= 3;
+
+
+
+
+   // rotX = x + (3*(x * slopeX));
+   // rotY = y + (3*(y * slopeY));
+   // rotZ = 0;//x + (20 * ez);
+
+   // printf("post calc %lf %lf %lf \n", rotX, rotY, rotZ);
+
+   ax = x - ax;
+   ay = y - ay;
+   az = z - az;
+
+
+   createTube(1, x, y+0.4, z, ax, ay+0.4, az, 2);
+   //createTube(1, x, y, 20, 60, 20, 60, 2);
+
+
+
+   return;
+}
 
 
 
@@ -633,7 +731,8 @@ void update() {
 void mouse(int button, int state, int x, int y) {
 
     if (button == GLUT_LEFT_BUTTON){
-      //printf("left button - ");
+      //printf("left button - \n"); //use this for firing tubes
+
     }else if (button == GLUT_MIDDLE_BUTTON){
       //printf("middle button - ");
     }else{
@@ -641,9 +740,15 @@ void mouse(int button, int state, int x, int y) {
     }
 
     if (state == GLUT_UP){
-      //printf("up - ");
+       //printf("fire!!\n");
+       fireTube();
+      //    printf("up - ");
+       
     }else{
-      //printf("down - ");
+      //  if (myFlag == 1){
+      //    printf("down - ");
+      // }
+      
     }
 
    //printf("%d %d\n", x, y);

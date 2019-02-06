@@ -77,37 +77,22 @@ Assignment 2
 
 ******************************************** 3. Firing a ray in the viewpoint direction. ********************************************
     --------------------Active--------------------
-    - Launch a ray from the viewpoint. It should travel in the direction which the viewpoint was facing when it is launched.
-    - the Tube functions need to be used to draw and hide the ray
+    - ray has been launched though it seems to have trouble following the y axis when the player looks up similar to what happens when you move
+    - ray may need to be drawn peice by peice and appear to grow
 
-
-
-
-
-
-> 
-> Use the Tube functions to draw and hide the ray. You can use the
-> getView*Position() functions to calculate the starting and ending points
-> for the ray.
-> 
-> Use the let mouse button to activate the ray. Time the duration of the
-> ray so that it is visible long enough for the marker to see it.
-> At the end of this time the ray should no longer be drawn.
-> 
-> The mouse() function allows you to respond to button press and release
-> events on the mouse. Remove the existing printf's from the mouse() function
-> in your final submission. They are there to help understand the function and
-> are not meant to be part of the final system.  
-> 
-> The end of the ray can go outside the border of the world space (when
-> 0>x>99 or 0>z>99 or 0>y>49).
-> 
-> If the ray intersects a cube containing a human then your program
-> should print a message to stdout indicating the ray-human collision.
-
-
+    - add the ability for more than one ray to form
+    - remove ray after a time 
+        -> ** perhaps a call in update **
+    - a message needs to be printed to stdout when a ray intersect with a human a simple message is fine its not implicitly specified
 
     ---------------------DONE---------------------
+    Launch a ray from the viewpoint. It should travel in the direction which the viewpoint was facing when it is launched.
+    - the Tube functions need to be used to draw and hide the ray
+
+    - ray launched on click of mouse
+    
+    solved equation done
+        -- current major problem is that c's math.h uses radians for sin and cos so i need to convert my angles to make it work
 
     
 ******************************************** 4. Displaying a Two Dimensional World Map ********************************************
@@ -119,7 +104,7 @@ Assignment 2
     - map at 2 displays a large map over the screen
         - When a ray is fired it should be drawn on the map while it exists
 
-    control direction the triangle points
+    Stretch goal -> control direction the triangle points
 
     ---------------------DONE---------------------
 

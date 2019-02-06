@@ -122,8 +122,8 @@ float speed = 0.7;
 int momentum = 0;
    
   
-
-
+/* functions draw tubes images */
+void createTube(int , float , float , float , float , float , float , int);
 
 
 	/* functions draw 2D images */
@@ -494,6 +494,9 @@ GLfloat red[] = {1.0, 0.0, 0.0, 1.0};
 GLfloat gray[] = {0.3, 0.3, 0.3, 1.0};
 GLfloat white[] = {1.0, 1.0, 1.0, 1.0};
 int i, j, k;
+
+ //createTube(1, 20, 20, 20, 60, 20, 60, 2);
+ //printf("check123\n");
 
    
    glClear (GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -878,6 +881,11 @@ void motion(int x, int y) {
 	/* update current mouse movement but don't use to change the viewpoint*/
    oldx = x;
    oldy = y;
+}
+
+void getMotion(float *x, float *y){
+   *x = oldx;
+   *y = oldy;
 }
 
 	/* responds to mouse movement when a button is not pressed */
