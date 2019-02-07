@@ -1,0 +1,352 @@
+/* //check against point
+   vectx = x - ax;
+   vecty = y - ay;
+   vectz = z - az;
+
+   for(humanLoop = 0; humanLoop < BODY_COUNT; humanLoop++){
+      //one print per body
+      once = 1;
+      //check each part of person humanLoop
+
+   //HEAD
+      cubex = fodder[humanLoop].head.x;
+      cubey = fodder[humanLoop].head.y;
+      cubez = fodder[humanLoop].head.z;
+
+      samex = (cubex - x) / vectx;
+      samey = (cubey - y) / vecty;
+      samez = (cubez - z) / vectz;
+      
+      if(samex < 0){
+         samex *= -1;
+      }
+      if(samey < 0){
+         samey *= -1;
+      }
+      if(samez < 0){
+         samez *= -1;
+      }
+
+      if(samex < 1 && samex > -1 && samey < 1 && samey > -1 && samez < 1 && samez > -1){
+         //printf("samex %lf,  samey %lf  samez %lf\n", samex, samey, samez);
+
+      }
+
+      //if(samex >= samey -0.1 && samex <= samey + 0.1 && samex >= samez -0.1 && samex <= samez + 0.1 && samey >= samez -0.1 && samey <= samez + 0.1)
+
+      if(once == 1 &&( (samex >= samez -0.222 && samex <= samez + 0.222) || (samex >= zero -0.15 && samex <= zero + 0.15) || (samez >= zero -0.15 && samez <= zero + 0.15) ) && ( (samez >= samex -0.222 && samez <= samex + 0.222 ) || (samez >= zero -0.15 && samez <= zero + 0.15) || (samex >= zero -0.15 && samex <= zero + 0.15) ) && ( (samey >= samex -0.23 && samey <= samex + 0.23) || (samey >= zero -0.15 && samey <= zero + 0.15) || (samex >= zero -0.15 && samex <= zero + 0.15) ) && ((samey >= samez -0.23 && samey <= samez + 0.23) || (samey >= zero -0.15 && samey <= zero + 0.15) || (samez >= zero -0.15 && samez <= zero + 0.15) ) ){
+         //printf("head\n");
+         if(x >= ax){
+            if( x >= cubex && ax <= cubex ){
+               if(z >= az){
+                  if( z >= cubez && az <= cubez ){
+                     if(y >= ay){
+                        if( y >= cubey && ay <= cubey ){
+                           printf("human head shot you IDIOT!!\n");
+                           printf("^samex %lf,  samey %lf  samez %lf\n", samex, samey, samez);
+                           once = 0;
+                        }
+                     }
+                     if(y < ay){
+                        if( ay >= cubey && y <= cubey ){
+                           printf("human head shot you IDIOT!!\n");
+                           printf("^samex %lf,  samey %lf  samez %lf\n", samex, samey, samez);
+                           once = 0;
+                        }
+                     }
+                  }
+               }
+               if(z < az){
+                  if( az >= cubez && z <= cubez ){
+                     if(y >= ay){
+                        if( y >= cubey && ay <= cubey ){
+                           printf("human head shot you IDIOT!!\n");
+                           printf("^samex %lf,  samey %lf  samez %lf\n", samex, samey, samez);
+                           once = 0;
+                        }
+                     }
+                     if(y < ay){
+                        if( ay >= cubey && y <= cubey ){
+                           printf("human head shot you IDIOT!!\n");
+                           printf("^samex %lf,  samey %lf  samez %lf\n", samex, samey, samez);
+                           once = 0;
+                        }
+                     }
+                  }
+               }
+            }
+         }
+         if(x < ax){
+            if( ax >= cubex && x <= cubex ){
+               if(z >= az){
+                  if( z >= cubez && az <= cubez ){
+                     if(y >= ay){
+                        if( y >= cubey && ay <= cubey ){
+                           printf("human head shot you IDIOT!!\n");
+                           printf("^samex %lf,  samey %lf  samez %lf\n", samex, samey, samez);
+                           once = 0;
+                        }
+                     }
+                     if(y < ay){
+                        if( ay >= cubey && y <= cubey ){
+                           printf("human head shot you IDIOT!!\n");
+                           printf("^samex %lf,  samey %lf  samez %lf\n", samex, samey, samez);
+                           once = 0;
+                        }
+                     }
+                  }
+               }
+               if(z < az){
+                  if( az >= cubez && z <= cubez ){
+                     if(y >= ay){
+                        if( y >= cubey && ay <= cubey ){
+                           printf("human head shot you IDIOT!!\n");
+                           printf("^samex %lf,  samey %lf  samez %lf\n", samex, samey, samez);
+                           once = 0;
+                        }
+                     }
+                     if(y < ay){
+                        if( ay >= cubey && y <= cubey ){
+                           printf("human head shot you IDIOT!!\n");
+                           printf("^samex %lf,  samey %lf  samez %lf\n", samex, samey, samez);
+                           once = 0;
+                        }
+                     }
+                  }
+               }
+            }
+         }
+         
+         
+         
+            
+          
+      }
+
+   //BODY
+      cubex = fodder[humanLoop].body.x;
+      cubey = fodder[humanLoop].body.y;
+      cubez = fodder[humanLoop].body.z;
+
+      samex = (cubex - x) / vectx;
+      samey = (cubey - y) / vecty;
+      samez = (cubez - z) / vectz;
+      //printf("samex %lf,  samey %lf  samez %lf\n", samex, samey, samez);
+
+      if(samex < 0){
+         samex *= -1;
+      }
+      if(samey < 0){
+         samey *= -1;
+      }
+      if(samez < 0){
+         samez *= -1;
+      }
+
+      //if(samex >= samey -0.1 && samex <= samey + 0.1 && samex >= samez -0.1 && samex <= samez + 0.1 && samey >= samez -0.1 && samey <= samez + 0.1)
+
+      if(once == 1 &&( (samex >= samez -0.1 && samex <= samez + 0.1) || (samex >= zero -0.15 && samex <= zero + 0.15) || (samez >= zero -0.15 && samez <= zero + 0.15) ) && ( (samez >= samex -0.1 && samez <= samex + 0.1 ) || (samez >= zero -0.15 && samez <= zero + 0.15) || (samex >= zero -0.15 && samex <= zero + 0.15) ) && ( (samey >= samex -0.23 && samey <= samex + 0.23) || (samey >= zero -0.15 && samey <= zero + 0.15) || (samex >= zero -0.15 && samex <= zero + 0.15) ) && ((samey >= samez -0.23 && samey <= samez + 0.23) || (samey >= zero -0.15 && samey <= zero + 0.15) || (samez >= zero -0.15 && samez <= zero + 0.15) ) ){
+         //printf("body\n");
+         if(x >= ax){
+            if( x >= cubex && ax <= cubex ){
+               if(z >= az){
+                  if( z >= cubez && az <= cubez ){
+                     if(y >= ay){
+                        if( y >= cubey && ay <= cubey ){
+                           printf("human head shot you IDIOT!!\n");
+                           printf("^samex %lf,  samey %lf  samez %lf\n", samex, samey, samez);
+                           once = 0;
+                        }
+                     }
+                     if(y < ay){
+                        if( ay >= cubey && y <= cubey ){
+                           printf("human head shot you IDIOT!!\n");
+                           printf("^samex %lf,  samey %lf  samez %lf\n", samex, samey, samez);
+                           once = 0;
+                        }
+                     }
+                  }
+               }
+               if(z < az){
+                  if( az >= cubez && z <= cubez ){
+                     if(y >= ay){
+                        if( y >= cubey && ay <= cubey ){
+                           printf("human head shot you IDIOT!!\n");
+                           printf("^samex %lf,  samey %lf  samez %lf\n", samex, samey, samez);
+                           once = 0;
+                        }
+                     }
+                     if(y < ay){
+                        if( ay >= cubey && y <= cubey ){
+                           printf("human head shot you IDIOT!!\n");
+                           printf("^samex %lf,  samey %lf  samez %lf\n", samex, samey, samez);
+                           once = 0;
+                        }
+                     }
+                  }
+               }
+            }
+         }
+         if(x < ax){
+            if( ax >= cubex && x <= cubex ){
+               if(z >= az){
+                  if( z >= cubez && az <= cubez ){
+                     if(y >= ay){
+                        if( y >= cubey && ay <= cubey ){
+                           printf("human head shot you IDIOT!!\n");
+                           printf("^samex %lf,  samey %lf  samez %lf\n", samex, samey, samez);
+                           once = 0;
+                        }
+                     }
+                     if(y < ay){
+                        if( ay >= cubey && y <= cubey ){
+                           printf("human head shot you IDIOT!!\n");
+                           printf("^samex %lf,  samey %lf  samez %lf\n", samex, samey, samez);
+                           once = 0;
+                        }
+                     }
+                  }
+               }
+               if(z < az){
+                  if( az >= cubez && z <= cubez ){
+                     if(y >= ay){
+                        if( y >= cubey && ay <= cubey ){
+                           printf("human head shot you IDIOT!!\n");
+                           printf("^samex %lf,  samey %lf  samez %lf\n", samex, samey, samez);
+                           once = 0;
+                        }
+                     }
+                     if(y < ay){
+                        if( ay >= cubey && y <= cubey ){
+                           printf("human head shot you IDIOT!!\n");
+                           printf("^samex %lf,  samey %lf  samez %lf\n", samex, samey, samez);
+                           once = 0;
+                        }
+                     }
+                  }
+               }
+            }
+         }
+         
+         
+         
+            
+          
+      }
+
+   //FEET
+      cubex = fodder[humanLoop].feet.x;
+      cubey = fodder[humanLoop].feet.y;
+      cubez = fodder[humanLoop].feet.z;
+
+      samex = (cubex - x) / vectx;
+      samey = (cubey - y) / vecty;
+      samez = (cubez - z) / vectz;
+      //printf("samex %lf,  samey %lf  samez %lf\n", samex, samey, samez);
+
+      if(samex < 0){
+         samex *= -1;
+      }
+      if(samey < 0){
+         samey *= -1;
+      }
+      if(samez < 0){
+         samez *= -1;
+      }
+
+      //if(samex >= samey -0.1 && samex <= samey + 0.1 && samex >= samez -0.1 && samex <= samez + 0.1 && samey >= samez -0.1 && samey <= samez + 0.1)
+
+      if(once == 1 &&( (samex >= samez -0.222 && samex <= samez + 0.222) || (samex >= zero -0.15 && samex <= zero + 0.15) || (samez >= zero -0.15 && samez <= zero + 0.15) ) && ( (samez >= samex -0.222 && samez <= samex + 0.222 ) || (samez >= zero -0.15 && samez <= zero + 0.15) || (samex >= zero -0.15 && samex <= zero + 0.15) ) && ( (samey >= samex -0.23 && samey <= samex + 0.23) || (samey >= zero -0.15 && samey <= zero + 0.15) || (samex >= zero -0.15 && samex <= zero + 0.15) ) && ((samey >= samez -0.23 && samey <= samez + 0.23) || (samey >= zero -0.15 && samey <= zero + 0.15) || (samez >= zero -0.15 && samez <= zero + 0.15) ) ){
+         //printf("feet\n");
+         if(x >= ax){
+            if( x >= cubex && ax <= cubex ){
+               if(z >= az){
+                  if( z >= cubez && az <= cubez ){
+                     if(y >= ay){
+                        if( y >= cubey && ay <= cubey ){
+                           printf("human head shot you IDIOT!!\n");
+                           printf("^samex %lf,  samey %lf  samez %lf\n", samex, samey, samez);
+                           once = 0;
+                        }
+                     }
+                     if(y < ay){
+                        if( ay >= cubey && y <= cubey ){
+                           printf("human head shot you IDIOT!!\n");
+                           printf("^samex %lf,  samey %lf  samez %lf\n", samex, samey, samez);
+                           once = 0;
+                        }
+                     }
+                  }
+               }
+               if(z < az){
+                  if( az >= cubez && z <= cubez ){
+                     if(y >= ay){
+                        if( y >= cubey && ay <= cubey ){
+                           printf("human head shot you IDIOT!!\n");
+                           printf("^samex %lf,  samey %lf  samez %lf\n", samex, samey, samez);
+                           once = 0;
+                        }
+                     }
+                     if(y < ay){
+                        if( ay >= cubey && y <= cubey ){
+                           printf("human head shot you IDIOT!!\n");
+                           printf("^samex %lf,  samey %lf  samez %lf\n", samex, samey, samez);
+                           once = 0;
+                        }
+                     }
+                  }
+               }
+            }
+         }
+         if(x < ax){
+            if( ax >= cubex && x <= cubex ){
+               if(z >= az){
+                  if( z >= cubez && az <= cubez ){
+                     if(y >= ay){
+                        if( y >= cubey && ay <= cubey ){
+                           printf("human head shot you IDIOT!!\n");
+                           printf("^samex %lf,  samey %lf  samez %lf\n", samex, samey, samez);
+                           once = 0;
+                        }
+                     }
+                     if(y < ay){
+                        if( ay >= cubey && y <= cubey ){
+                           printf("human head shot you IDIOT!!\n");
+                           printf("^samex %lf,  samey %lf  samez %lf\n", samex, samey, samez);
+                           once = 0;
+                        }
+                     }
+                  }
+               }
+               if(z < az){
+                  if( az >= cubez && z <= cubez ){
+                     if(y >= ay){
+                        if( y >= cubey && ay <= cubey ){
+                           printf("human head shot you IDIOT!!\n");
+                           printf("^samex %lf,  samey %lf  samez %lf\n", samex, samey, samez);
+                           once = 0;
+                        }
+                     }
+                     if(y < ay){
+                        if( ay >= cubey && y <= cubey ){
+                           printf("human head shot you IDIOT!!\n");
+                           printf("^samex %lf,  samey %lf  samez %lf\n", samex, samey, samez);
+                           once = 0;
+                        }
+                     }
+                  }
+               }
+            }
+         }
+         
+         
+         
+            
+          
+      }
+   
+
+   }*/
+
+   /*set cubex.y.z. to human parts use fodder loop should have everything*/
+   //

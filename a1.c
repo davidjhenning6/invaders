@@ -167,42 +167,108 @@ momentus movement;
  /*time variable to curb the amount of time uodate happens*/
 struct timeb oldT;
 struct timeb newT;
+//for removing rays from the screen
+struct timeb shotClock;
 
 //func def for a2 for firing a tube called in mouse
 int rayCount = 0;
+// struct with sys time and int id
+typedef struct RayShot{
+   //int id;
+   struct timeb shotAt;
+}expire;
+expire myRays[TUBE_COUNT];
+
 //left mouse button clicked
 void fireTube(){
 
+   // start
    float x, y, z;
    float rotX, rotY, rotZ;
    float slopeY, slopeX;
-   float ax, ay, az;
+   // end
+   float ax = 0;
+   float ay = 0;
+   float az = 0;
    double radY, radX;
 
+   // vector of line
+   float vectx = 0;
+   float vecty = 0; 
+   float vectz = 0;
+   // compare these should all be the same
+   float samex = 0;
+   float samey = 0; 
+   float samez = 0;
+   // cube coordinates
+   float cubex = 0;
+   float cubey = 0;
+   float cubez = 0;
+   // loop through all body parts
+   int rayLoop = 0;
+   // one print per body!!
+   int once = 1;
+   // zero variable
+   float zero = 0.0;
    //float ex, ey, ez;
 
    getViewPosition(&x, &y, &z);
    x *= -1;
    y *= -1;
    z *= -1;
-
+   //printf("beginning :: x %lf y %lf z %lf \n", x, y+0.4, z);
 
    getViewOrientation(&rotX, &rotY, &rotZ);
 
    radY = rotY / 180.0 * 3.141592;
    radX = rotX / 180.0 * 3.141592;
 
-   ax -= sin(radY) * 30.0;
-   ay += sin(radX) * 30.0;         
-   az += cos(radY) * 30.0;
+   ax -= sin(radY);
+   ay += sin(radX);         
+   az += cos(radY);
+
+   vectx = ax * 30.0;
+   vecty = ay * 30.0;
+   vectz = az * 30.0;
 
 
-   ax = x - ax;
-   ay = y - ay;
-   az = z - az;
+   vectx = x - vectx;
+   vecty = y - vecty;
+   vectz = z - vectz;
+   //printf("end :: x %lf y %lf z %lf \n", ax, ay+0.4, az);
+
+   createTube(rayCount, x, y, z, vectx, vecty, vectz, 2);
+   // y -= 0.1;
+   // ay -= 0.1;
+
+   for(rayLoop = 1; rayLoop <= 600; rayLoop++){
+      once = rayLoop / 20;
+      cubex = x - (ax * once);
+      cubey = y - (ay * once);
+      cubez = z - (az * once);
+
+      if(cubex > 99 || cubex < 0 || cubez > 99 || cubez < 0 || cubey > 49 || cubex < 0){
+         break;
+      }
+      
+      
+      
+      if(world[(int)cubex][(int)cubey][(int)cubez] == 3 || world[(int)cubex][(int)cubey][(int)cubez] == 4 || world[(int)cubex][(int)cubey][(int)cubez] == 7){
+         printf("shots fired\n");
+         break;
+      }
+
+   }
+
+   
 
 
-   createTube(rayCount, x, y+0.4, z, ax, ay+0.4, az, 2);
+   
+
+
+
+
+   ftime(&myRays[rayCount].shotAt);
    //createTube(1, x, y, 20, 60, 20, 60, 2);
    rayCount++;
    if(rayCount == TUBE_COUNT){
@@ -327,6 +393,7 @@ void draw2D() {
       GLfloat red[] = {0.5, 0.0, 0.0, 1};
       GLfloat black[] = {0.0, 0.0, 0.0, 0.5};
       GLfloat white[] = {1, 1, 1, 1};
+      GLfloat purple[] = {1.0, 0.0, 1.0, 1.0};
       set2Dcolour(black);
 
       if (displayMap == 1) {
@@ -341,7 +408,7 @@ void draw2D() {
          //format x, z(y) , x, z(y), x, z(y)
          draw2Dtriangle(screenWidth - (220 - px), screenHeight - (220 - pz), screenWidth - (218 - px), screenHeight - (226 - pz), screenWidth - (222-px), screenHeight - (226-pz));
    //draw rays on the map
-         set2Dcolour(white);
+         set2Dcolour(purple);
          
          for(rayLoop=0; rayLoop < TUBE_COUNT; rayLoop++){
             if(tubeVisible[rayLoop] == 1){
@@ -350,6 +417,18 @@ void draw2D() {
                rayBZ = tubeData[rayLoop][2] * 2;
                rayEX = tubeData[rayLoop][3] * 2;
                rayEZ = tubeData[rayLoop][5] * 2;
+               if( (220 - rayEX) < 20 ){
+                  rayEX = 200;
+               }
+               if( (220 - rayEZ) < 20 ){
+                  rayEZ = 200;
+               }
+               if( (220 - rayEX) > 220 ){
+                  rayEX = 0;
+               }
+               if( (220 - rayEZ) > 220 ){
+                  rayEZ = 0;
+               }
                draw2Dline(screenWidth - (220 - rayBX), screenHeight - (220 - rayBZ), screenWidth - (220 - rayEX), screenHeight - (220 - rayEZ), 2);
 
 
@@ -407,7 +486,7 @@ void draw2D() {
          // //format x, z(y) , x, z(y), x, z(y)
          draw2Dtriangle(screenWidth/2 + (px), screenHeight/2 + (pz), screenWidth/2 + (px+3), screenHeight/2 + (pz-10), screenWidth/2 + (px-3), screenHeight/2 + (pz-10));
    //draw all the rays on the map
-         set2Dcolour(white);
+         set2Dcolour(purple);
          for(rayLoop=0; rayLoop < TUBE_COUNT; rayLoop++){
             if(tubeVisible[rayLoop] == 1){
                //printf("tubevisible %d\n", rayLoop);
@@ -446,6 +525,19 @@ void draw2D() {
                else{
                   rayEZ = (49-rayEZ) * (-6);
                   //bigMapZ = -1;
+               }
+
+               if(rayEX > 300){
+                  rayEX = 300;
+               }
+               if(rayEX < -300){
+                  rayEX = -300;
+               }
+               if(rayEZ > 300){
+                  rayEZ = 300;
+               }
+               if(rayEZ < -300){
+                  rayEZ = -300;
                }
 
                draw2Dline(screenWidth/2 + (rayBX), screenHeight/2 + (rayBZ), screenWidth/2 + (rayEX), screenHeight/2 + (rayEZ), 2);
@@ -566,13 +658,29 @@ void update() {
          setUserColour(9, 0.7, 0.3 + offset, 0.7, 1.0, 0.3, 0.15 + offset, 0.3, 1.0);
 
       /* end testworld animation */
-   } else {
+   } else { 
 
 	/* your code goes here */
+   /****** times out rays once they've been on long enough ******/
+      int rayLoop = 0;
+      for(rayLoop=0; rayLoop < TUBE_COUNT; rayLoop++){
+         if(tubeVisible[rayLoop] == 1){
+            ftime(&shotClock);
+            if(myRays[rayLoop].shotAt.time < shotClock.time - 5){
+               tubeVisible[rayLoop] = 0;
+            }
+            
+         }      
+      }
 
+
+
+
+
+   /****** Gravity ******/
       ftime(&newT);
 
-   /* newT should be checked here to curb framerate */
+      /* newT should be checked here to curb framerate */
       float diff = 0.0;
       diff = newT.millitm - oldT.millitm;
       //printf("%lf\n", diff);
@@ -610,11 +718,14 @@ void update() {
                
                world[ (int)fodder[loop].feet.x ][ (int)fodder[loop].head.y+1 ][ (int)fodder[loop].feet.z ] = 0;//remove old head
             }
+            // if( world[ (int)fodder[loop].feet.x ][ (int)fodder[loop].feet.y-1  ][ (int)fodder[loop].feet.z  ] != 0  ){
+            //    printf("person %d, head :: x %d y %d z %d\n", loop, (int)fodder[loop].head.x, (int)fodder[loop].head.y, (int)fodder[loop].head.z );
+            // }
          }
 
 
       
-      /****** Momentum ******/
+   /****** Momentum ******/
          float x, y, z;
          float oldX, oldY, oldZ;
          float check = 1;

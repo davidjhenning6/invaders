@@ -77,15 +77,15 @@ Assignment 2
 
 ******************************************** 3. Firing a ray in the viewpoint direction. ********************************************
     --------------------Active--------------------
-    - ray has been launched though it seems to have trouble following the y axis when the player looks up similar to what happens when you move
-    - ray may need to be drawn peice by peice and appear to grow
+    UNSURE - ray has been launched though it seems to have trouble following the y axis when the player looks up similar to what happens  when you move
 
-    - remove ray after a time 
-        -> ** perhaps a call in update **
-        -- images on phone explaining how to do that
-    - a message needs to be printed to stdout when a ray intersect with a human a simple message is fine its not implicitly specified
+    UNSURE - ray may need to be drawn peice by peice and appear to grow
 
     ---------------------DONE---------------------
+
+    DONE - a message needs to be printed to stdout when a ray intersect with a human a simple message is fine its not implicitly specified
+
+
     Launch a ray from the viewpoint. It should travel in the direction which the viewpoint was facing when it is launched.
     - the Tube functions need to be used to draw and hide the ray
 
@@ -97,18 +97,33 @@ Assignment 2
     - add the ability for more than one ray to form
         -- capped at 10 max on screen at a time
 
+     DONE - remove ray after a time 
+        -> ** perhaps a call in update **
+        -- images on phone explaining how to do that
+
+        DONE **
+        -> in update 
+            only update time when shoot
+                to activate only set new time when a ray is fired in fireTube()
+
+            struct -> has an int id, and sys/time time fired
+
+            for loop check each id's time
+                check each id's time if 'x' time has elapsed set to invisible
+                no need to reset time as the tube will already be invisible so no harm in setting it to invisible when its already invisible
+
+
+    ****scrapped****
+    if x or z is close to zero than they dont have to be close!!!!!!!!!!!!!!!!!!!!!!!
+    if a value is greater than 0. ignore the cube
+    && samex < 0.31 && samex > -0.31 && samez < 0.31 && samez > -0.31 )
+    this can't happen!!!! -> samex 0.913306,  samey 0.705073  samez 0.028021
+
+    try converting back to block like ash did with the cube example
+
     
 ******************************************** 4. Displaying a Two Dimensional World Map ********************************************
     --------------------Active--------------------
-
-    - map at 1 displays small map in upper right corner
-        - When a ray is fired it should be drawn on the map while it exists
-            --rays appear however ask if the rays should end at the edges of the map or not **
-
-    - map at 2 displays a large map over the screen
-        - When a ray is fired it should be drawn on the map while it exists
-            --rays appear however ask if the rays should end at the edges of the map or not **
-
     Stretch goal -> control direction the triangle points
 
     ---------------------DONE---------------------
@@ -119,11 +134,15 @@ Assignment 2
         - people are shown as squares
         - player is shown as a triangle which needs to be constantly updated
         - map is a square with borders that reflects the games xz coordinates
+        - When a ray is fired it should be drawn on the map while it exists
+            --rays appear however ask if the rays should end at the edges of the map or not **
 
     - map at 2 displays a large map over the screen
         - people are shown as squares
         - player is shown as a triangle which needs to be constantly updated
         - map is a square with borders that reflects the games xz coordinates
+        - When a ray is fired it should be drawn on the map while it exists
+            --rays appear however ask if the rays should end at the edges of the map or not **
 
     - the screenWidth and screenHeight variables need be used to scale the size of the maps when the window size is changed.   
 
