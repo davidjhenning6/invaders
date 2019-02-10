@@ -210,7 +210,9 @@ void fireTube(){
    int once = 1;
    // zero variable
    float zero = 0.0;
-   //float ex, ey, ez;
+   //for moving past a person in ray collision
+   int prevX, prevY, prevZ;
+   int curX, curY, curZ;
 
    getViewPosition(&x, &y, &z);
    x *= -1;
@@ -240,23 +242,41 @@ void fireTube(){
    createTube(rayCount, x, y, z, vectx, vecty, vectz, 2);
    // y -= 0.1;
    // ay -= 0.1;
+   prevX = -1;
+   prevY = -1;
+   prevZ = -1;
 
    for(rayLoop = 1; rayLoop <= 300; rayLoop++){
       once = rayLoop / 10;
       cubex = x - (ax * once);
       cubey = y - (ay * once);
       cubez = z - (az * once);
+      curX = (int)cubex;
+      curY = (int)cubey;
+      curZ = (int)cubez;
 
       if(cubex > 99 || cubex < 0 || cubez > 99 || cubez < 0 || cubey > 49 || cubex < 0){
          break;
       }
       
       
-      
-      if(world[(int)cubex][(int)cubey][(int)cubez] == 3 || world[(int)cubex][(int)cubey][(int)cubez] == 4 || world[(int)cubex][(int)cubey][(int)cubez] == 7){
-         printf("Human shot by Ray!\n");
-         break;
+      //printf("%d %d %d       %d %d %d \n", prevX, curX, prevY, curY, prevZ, curZ);
+      if( (prevX != curX) || (prevY != curY) || (prevZ != curZ) ){
+         if( prevX == curX && prevZ == curZ && curY != prevY+1 && curY != prevY-1 ){
+            //do nothing
+         }
+         else{
+            if(world[(int)cubex][(int)cubey][(int)cubez] == 3 || world[(int)cubex][(int)cubey][(int)cubez] == 4 || world[(int)cubex][(int)cubey][(int)cubez] == 7){
+               printf("Human shot by Ray!\n\n\n");
+               prevX = (int)cubex;
+               prevY = (int)cubey;
+               prevZ = (int)cubez;
+            }
+        }
+         
       }
+      
+      
 
    }
 
