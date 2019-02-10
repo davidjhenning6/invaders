@@ -84,7 +84,7 @@ extern int netClient;
 	/* flag indicates the program is a server when set = 1 */
 extern int netServer; 
 	/* size of the window in pixels */
-extern int screenWidth, screenHeight;
+extern float screenWidth, screenHeight;
 	/* flag indicates if map is to be printed */
 extern int displayMap;
 	/* flag indicates use of a fixed viewpoint */
@@ -241,8 +241,8 @@ void fireTube(){
    // y -= 0.1;
    // ay -= 0.1;
 
-   for(rayLoop = 1; rayLoop <= 600; rayLoop++){
-      once = rayLoop / 20;
+   for(rayLoop = 1; rayLoop <= 300; rayLoop++){
+      once = rayLoop / 10;
       cubex = x - (ax * once);
       cubey = y - (ay * once);
       cubez = z - (az * once);
@@ -254,7 +254,7 @@ void fireTube(){
       
       
       if(world[(int)cubex][(int)cubey][(int)cubez] == 3 || world[(int)cubex][(int)cubey][(int)cubez] == 4 || world[(int)cubex][(int)cubey][(int)cubez] == 7){
-         printf("shots fired\n");
+         printf("Human shot by Ray!\n");
          break;
       }
 
@@ -360,6 +360,8 @@ void collisionResponse() {
 	/*	set2Dcolour(float []); 				*/
 	/* colour must be set before other functions are called	*/
 void draw2D() {
+   float smallW = screenWidth/400;
+   float smallH = screenHeight/300;
 
    if (testWorld) {
 		/* draw some sample 2d shapes */
@@ -376,7 +378,7 @@ void draw2D() {
    } else {
 	/* your code goes here */
 
-      //loop for rays
+     //loop for rays
       int rayLoop;
       int rayBX, rayBZ, rayEX, rayEZ;
 
@@ -397,39 +399,41 @@ void draw2D() {
       set2Dcolour(black);
 
       if (displayMap == 1) {
+          
    //draw character position on the map
          set2Dcolour(white);
 
          getViewPosition(&px, &py, &pz);
-         px *= -2;
-         pz *= -2;
-         py *= -2;
+         px *= -1;
+         pz *= -1;
+         py *= -1;
 
          //format x, z(y) , x, z(y), x, z(y)
-         draw2Dtriangle(screenWidth - (220 - px), screenHeight - (220 - pz), screenWidth - (218 - px), screenHeight - (226 - pz), screenWidth - (222-px), screenHeight - (226-pz));
+         draw2Dtriangle( screenWidth - ((110 * smallW) - (px * smallW)), screenHeight - ((110 * smallH) - (pz * smallH)), screenWidth - ((111 * smallW) - (px * smallW)), screenHeight - ((112 * smallH) - (pz * smallH)), screenWidth - ((109 * smallW) - (px * smallW)), screenHeight - ((112 * smallH) - (pz * smallH)) );
+          
    //draw rays on the map
          set2Dcolour(purple);
          
          for(rayLoop=0; rayLoop < TUBE_COUNT; rayLoop++){
             if(tubeVisible[rayLoop] == 1){
                //printf("tubevisible %d\n", rayLoop);
-               rayBX = tubeData[rayLoop][0] * 2;
-               rayBZ = tubeData[rayLoop][2] * 2;
-               rayEX = tubeData[rayLoop][3] * 2;
-               rayEZ = tubeData[rayLoop][5] * 2;
-               if( (220 - rayEX) < 20 ){
-                  rayEX = 200;
+               rayBX = tubeData[rayLoop][0];
+               rayBZ = tubeData[rayLoop][2];
+               rayEX = tubeData[rayLoop][3];
+               rayEZ = tubeData[rayLoop][5];
+               if( (110 - rayEX) < 10 ){
+                  rayEX = 100;
                }
-               if( (220 - rayEZ) < 20 ){
-                  rayEZ = 200;
+               if( (110 - rayEZ) < 10 ){
+                  rayEZ = 100;
                }
-               if( (220 - rayEX) > 220 ){
+               if( (110 - rayEX) > 110 ){
                   rayEX = 0;
                }
-               if( (220 - rayEZ) > 220 ){
+               if( (110 - rayEZ) > 110 ){
                   rayEZ = 0;
                }
-               draw2Dline(screenWidth - (220 - rayBX), screenHeight - (220 - rayBZ), screenWidth - (220 - rayEX), screenHeight - (220 - rayEZ), 2);
+               draw2Dline(screenWidth - ((110 * smallW) - (rayBX * smallW)), screenHeight - ((110 * smallH) - (rayBZ * smallH)), screenWidth - ((110 * smallW) - (rayEX * smallW)), screenHeight - ((110 * smallH) - (rayEZ * smallH)), 2);
 
 
             }
@@ -437,21 +441,34 @@ void draw2D() {
    
    //draw all the humans on the map
          set2Dcolour(red);
+          int xb = 0;
+          int zb = 0;
+          int xe = 0;
+          int ze = 0;
          for(i = 0; i < BODY_COUNT; i++){
-            x = fodder[i].head.x * 2;
-            z = fodder[i].head.z * 2;
-            draw2Dbox(screenWidth - (220 - x), screenHeight - (220 - z), screenWidth - (218 - x), screenHeight - (218 - z));
+            x = fodder[i].head.x;
+            z = fodder[i].head.z;
+             xb = screenWidth - ((110 * smallW) - (x * smallW));
+             zb = screenHeight - ((110 * smallH) - (z * smallH));
+             xe = screenWidth - ((110 * smallW) - (x * smallW));
+             ze = screenHeight - ((110 * smallH) - (z * smallH));
+             xe += (smallW * 1.5);
+             ze += (smallH * 1.5);
+             
+             
+             
+            draw2Dbox( xb, zb, xe, ze);
          }
          
    //draw the map background must be done last as the first thing drawn is drawn ontop
          set2Dcolour(white);
-         draw2Dline(screenWidth - 19, screenHeight - 19, screenWidth - 221, screenHeight - 19, 2);
-         draw2Dline(screenWidth - 221, screenHeight - 19, screenWidth - 221, screenHeight - 221, 2);
-         draw2Dline(screenWidth - 221, screenHeight - 221, screenWidth - 19, screenHeight - 221, 2);
-         draw2Dline(screenWidth - 19, screenHeight - 221, screenWidth - 19, screenHeight - 19, 2);
+         draw2Dline(screenWidth - (9 * smallW), screenHeight - (9 * smallH), screenWidth - (111 * smallW), screenHeight - (9 * smallH), 4);
+         draw2Dline(screenWidth - (111 * smallW), screenHeight - (9 * smallH), screenWidth - (111 * smallW), screenHeight - (111 * smallH), 4);
+         draw2Dline(screenWidth - (111 * smallW), screenHeight - (111 * smallH), screenWidth - (9 * smallW), screenHeight - (111 * smallH), 4);
+         draw2Dline(screenWidth - (9 * smallW), screenHeight - (111 * smallH), screenWidth - (9 * smallW), screenHeight - (9 * smallH), 4);
 
          set2Dcolour(black);
-         draw2Dbox(screenWidth - 20, screenHeight - 20, screenWidth - 220, screenHeight - 220);
+         draw2Dbox(screenWidth - (10 * smallW), screenHeight - (10 * smallH), screenWidth - (110 * smallW), screenHeight - (110 * smallH));
 
       }
    //big map
@@ -461,124 +478,77 @@ void draw2D() {
          int rayBX, rayBZ, rayEX, rayEZ;
 
    //draw character position on the map
-         set2Dcolour(white);
-         getViewPosition(&px, &py, &pz);
-         px *= -1;
-         pz *= -1;
-         py *= -1;
-         //printf("px = %lf, pz = %lf\n", px, pz);
-         if(px >= 49){
-            px = (px-49) * 6;
-            // bigMapX = 3;
-         }
-         else{
-            px = (49-px) * (-6);
-            //bigMapX = -3;
-         }
-         if(pz >= 49){
-            pz = (pz-49)* 6;
-            //bigMapZ = 3;
-         }
-         else{
-            pz = (49-pz) * (-6);
-            //bigMapZ = -1;
-         }
-         // //format x, z(y) , x, z(y), x, z(y)
-         draw2Dtriangle(screenWidth/2 + (px), screenHeight/2 + (pz), screenWidth/2 + (px+3), screenHeight/2 + (pz-10), screenWidth/2 + (px-3), screenHeight/2 + (pz-10));
+          set2Dcolour(white);
+          
+          getViewPosition(&px, &py, &pz);
+          px *= -2;
+          pz *= -2;
+          py *= -2;
+          
+          //format x, z(y) , x, z(y), x, z(y)
+          draw2Dtriangle( screenWidth - ((300 * smallW) - (px * smallW)), screenHeight - ((250 * smallH) - (pz * smallH)), screenWidth - ((301 * smallW) - (px * smallW)), screenHeight - ((253 * smallH) - (pz * smallH)), screenWidth - ((299 * smallW) - (px * smallW)), screenHeight - ((253 * smallH) - (pz * smallH)) );
    //draw all the rays on the map
-         set2Dcolour(purple);
-         for(rayLoop=0; rayLoop < TUBE_COUNT; rayLoop++){
-            if(tubeVisible[rayLoop] == 1){
-               //printf("tubevisible %d\n", rayLoop);
-               rayBX = tubeData[rayLoop][0];
-               rayBZ = tubeData[rayLoop][2];
-               rayEX = tubeData[rayLoop][3];
-               rayEZ = tubeData[rayLoop][5];
-               if(rayBX >= 49){
-                  rayBX = (rayBX-49) * 6;
-                  // bigMapX = 3;
-               }
-               else{
-                  rayBX = (49-rayBX) * (-6);
-                  //bigMapX = -3;
-               }
-               if(rayBZ >= 49){
-                  rayBZ = (rayBZ-49)* 6;
-                  //bigMapZ = 3;
-               }
-               else{
-                  rayBZ = (49-rayBZ) * (-6);
-                  //bigMapZ = -1;
-               }
-               if(rayEX >= 49){
-                  rayEX = (rayEX-49) * 6;
-                  // bigMapX = 3;
-               }
-               else{
-                  rayEX = (49-rayEX) * (-6);
-                  //bigMapX = -3;
-               }
-               if(rayEZ >= 49){
-                  rayEZ = (rayEZ-49)* 6;
-                  //bigMapZ = 3;
-               }
-               else{
-                  rayEZ = (49-rayEZ) * (-6);
-                  //bigMapZ = -1;
-               }
-
-               if(rayEX > 300){
-                  rayEX = 300;
-               }
-               if(rayEX < -300){
-                  rayEX = -300;
-               }
-               if(rayEZ > 300){
-                  rayEZ = 300;
-               }
-               if(rayEZ < -300){
-                  rayEZ = -300;
-               }
-
-               draw2Dline(screenWidth/2 + (rayBX), screenHeight/2 + (rayBZ), screenWidth/2 + (rayEX), screenHeight/2 + (rayEZ), 2);
-
-
-            }
-         }
+          set2Dcolour(purple);
+          
+          for(rayLoop=0; rayLoop < TUBE_COUNT; rayLoop++){
+              if(tubeVisible[rayLoop] == 1){
+                  //printf("tubevisible %d\n", rayLoop);
+                  rayBX = tubeData[rayLoop][0];
+                  rayBZ = tubeData[rayLoop][2];
+                  rayEX = tubeData[rayLoop][3];
+                  rayEZ = tubeData[rayLoop][5];
+                  if( (110 - rayEX) < 10 ){
+                      rayEX = 100;
+                  }
+                  if( (110 - rayEZ) < 10 ){
+                      rayEZ = 100;
+                  }
+                  if( (110 - rayEX) > 110 ){
+                      rayEX = 0;
+                  }
+                  if( (110 - rayEZ) > 110 ){
+                      rayEZ = 0;
+                  }
+                  rayEZ *= 2;
+                  rayEX *= 2;
+                  rayBZ *= 2;
+                  rayBX *= 2;
+                  draw2Dline(screenWidth - ((300 * smallW) - (rayBX * smallW)), screenHeight - ((250 * smallH) - (rayBZ * smallH)), screenWidth - ((300 * smallW) - (rayEX * smallW)), screenHeight - ((250 * smallH) - (rayEZ * smallH)), 2);
+                  
+                  
+              }
+          }
    //draw all the humans on the map
-         set2Dcolour(red);
-         for(i = 0; i < BODY_COUNT; i++){
-            x = fodder[i].head.x;
-            z = fodder[i].head.z;
-
-            if(x >= 49){
-               x = (x-49) * 6;
-               // bigMapX = 3;
-            }
-            else{
-               x = (49-x) * (-6);
-               //bigMapX = -3;
-            }
-            if(z >= 49){
-               z = (z-49)* 6;
-               //bigMapZ = 3;
-            }
-            else{
-               z = (49-z) * (-6);
-               //bigMapZ = -1;
-            }
-            draw2Dbox( (screenWidth/2) + x - 3, (screenHeight/2) + z - 3, (screenWidth/2) + x + 3 , (screenHeight/2) + z + 3);
-         }
+          set2Dcolour(red);
+          int xb = 0;
+          int zb = 0;
+          int xe = 0;
+          int ze = 0;
+          for(i = 0; i < BODY_COUNT; i++){
+              x = fodder[i].head.x * 2;
+              z = fodder[i].head.z * 2;
+              xb = screenWidth - ((300 * smallW) - (x * smallW));
+              zb = screenHeight - ((250 * smallH) - (z * smallH));
+              xe = screenWidth - ((300 * smallW) - (x * smallW));
+              ze = screenHeight - ((250 * smallH) - (z * smallH));
+              xe += (smallW * 2);
+              ze += (smallH * 2);
+              
+              
+              
+              draw2Dbox( xb, zb, xe, ze);
+          }
 
 
    //base colour and border of map
          set2Dcolour(white);
-         draw2Dline(screenWidth/2 - 303, screenHeight/2 + 303, screenWidth/2 + 303, screenHeight/2 + 303, 2);
-         draw2Dline(screenWidth/2 + 303, screenHeight/2 - 303, screenWidth/2 + 303, screenHeight/2 + 303, 2);
-         draw2Dline(screenWidth/2 - 303, screenHeight/2 - 303, screenWidth/2 - 303, screenHeight/2 + 303, 2);
-         draw2Dline(screenWidth/2 - 303, screenHeight/2 - 303, screenWidth/2 + 303, screenHeight/2 - 303, 2);
-         set2Dcolour(black);
-         draw2Dbox(screenWidth/2 - 303, screenHeight/2 - 303, screenWidth/2 + 303, screenHeight/2 + 303);
+          draw2Dline(screenWidth - (98 * smallW), screenHeight - (49 * smallH), screenWidth - (301 * smallW), screenHeight - (49 * smallH), 4);
+          draw2Dline(screenWidth - (301 * smallW), screenHeight - (49 * smallH), screenWidth - (301 * smallW), screenHeight - (251 * smallH), 4);
+          draw2Dline(screenWidth - (301 * smallW), screenHeight - (251 * smallH), screenWidth - (98 * smallW), screenHeight - (251 * smallH), 4);
+          draw2Dline(screenWidth - (98 * smallW), screenHeight - (251 * smallH), screenWidth - (98 * smallW), screenHeight - (49 * smallH), 4);
+          
+          set2Dcolour(black);
+          draw2Dbox(screenWidth - (100 * smallW), screenHeight - (50 * smallH), screenWidth - (300 * smallW), screenHeight - (250 * smallH));
          
       }
 
