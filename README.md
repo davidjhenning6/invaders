@@ -79,7 +79,7 @@ Assignment 2
     --------------------Active--------------------
     UNSURE - ray has been launched though it seems to have trouble following the y axis when the player looks up similar to what happens  when you move
 
-    UNSURE - ray may need to be drawn peice by peice and appear to grow
+
 
     ---------------------DONE---------------------
 
@@ -127,6 +127,8 @@ Assignment 2
     Stretch goal -> control direction the triangle points
 
     ---------------------DONE---------------------
+
+    - maps now scale based on the window size
 
      - map at 0 displays no map
 
