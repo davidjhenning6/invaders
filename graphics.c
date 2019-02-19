@@ -45,7 +45,7 @@ GLubyte  Image[64][64][4];
 GLuint   textureID[1];
 
 	/* viewpoint coordinates */
-float vpx = -20.0, vpy = -35.0, vpz = -20.0;    /////controls ViewPoint starting position
+float vpx = -20.0, vpy = -20.0, vpz = -20.0;    /////controls ViewPoint starting position
 float oldvpx, oldvpy, oldvpz;
 
 	/* mouse direction coordiates */
@@ -453,7 +453,15 @@ GLfloat dorange[]   = {0.5, 0.32, 0.0, 1.0};
    else if (colourID == 8) { 
       glMaterialfv(GL_FRONT, GL_AMBIENT, dyellow);
       glMaterialfv(GL_FRONT, GL_DIFFUSE, yellow);
-   } else {
+      //9 is taken made in a1 used for many things not sure if it will cause a problem
+      //10 is for snow
+   }else if (colourID == 8) { 
+      //ground//glMaterialfv(GL_FRONT, GL_AMBIENT_AND_DIFFUSE, black);
+   }else if (colourID == 10) { 
+      //snow//glMaterialfv(GL_FRONT, GL_AMBIENT_AND_DIFFUSE, black);
+   }else if (colourID == 12) { 
+      glMaterialfv(GL_FRONT, GL_AMBIENT_AND_DIFFUSE, black);
+   }else {
 		/* user define colour */
       if (uColourUsed[ colourID ] != 1) {
          printf("ERROR, attempt to access colour which is not allocated.\n");

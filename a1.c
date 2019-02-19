@@ -19,9 +19,10 @@ Assignment 1
 #include <sys/timeb.h>
 #include <time.h>
 
-#define BODY_COUNT 100
+#define BODY_COUNT 10
 #define ACCELERATION 100
 #define TUBE_COUNT 10
+#define ALIEN_COUNT 5
 
 #include "graphics.h"
 
@@ -137,6 +138,18 @@ typedef struct Coordinate{
    float z;
 }xyz; //pay attention to order its x y z
 
+//for each alien there is a global array of these 
+typedef struct Alien{
+   xyz base; // this will represent the base of the aliens stem
+   xyz target; // the coordinates of the human head so should end up one above the target?? could make the coordinates the target for one above the human head
+   int visible; // this should be default 1 meaning the alien is default visible
+   float vx;
+   float vz;
+   float vy;
+   int state; // has 4 states 0 -> 3    0 is searching, 1 is moving to human, 2 is carry human straight up, 3 rise back to searching height
+   int searchingHeight; // each alien will have a randomized height between a certain range
+}alien;
+
 typedef struct Humans{
    xyz head;
    xyz body;
@@ -151,6 +164,9 @@ typedef struct myPosition{
 
 //dedicated memory for humans
 human fodder[BODY_COUNT];
+
+//dedicated memory for landers
+alien lander[ALIEN_COUNT]; 
 
 int count = ACCELERATION;
 
@@ -167,6 +183,8 @@ momentus movement;
  /*time variable to curb the amount of time uodate happens*/
 struct timeb oldT;
 struct timeb newT;
+struct timeb oldAT;
+struct timeb newAT;
 //for removing rays from the screen
 struct timeb shotClock;
 
@@ -178,6 +196,16 @@ typedef struct RayShot{
    struct timeb shotAt;
 }expire;
 expire myRays[TUBE_COUNT];
+
+void drawLander(int, int, int);
+void removeLander(int, int, int);
+void alienMovement();
+void humanGravity();
+void viewMomentum();
+void collisionResponse();
+void removeRayLoop();
+
+
 
 //left mouse button clicked
 void fireTube(){
@@ -299,6 +327,465 @@ void fireTube(){
    return;
 }
 
+/**
+ * draws the lander alien the coordinates it recieves are the base of the stem of the lander
+ * the coordinates must be within the range:: for x & z from 2 -> 97, for y from 1 -> 45
+ * the values scanned in are checked at the beginning 
+*/
+void drawLander(int x, int y, int z){
+
+   //treat 50 25 50 as x,y,z recieved in function
+
+      //checks to make sure the game won't draw alien outside of world and segfault
+      if(y+4 > 49){
+         y = 49 - 4;
+      }else if( y-1< 0){
+         y = 1;
+      }
+      if(x + 2 > 99 ){
+         x = 97;
+      }else if(x - 2 < 0 ){
+         x = 2;
+      }
+      if(z + 2 > 99 ){
+         z = 97;
+      }else if(z - 2 < 0 ){
+         z = 2;
+      }
+
+      int alienX = x;
+      int alienY = y;
+      int alienZ = z;
+
+      //stem of alien starting at base
+      world[alienX][alienY][alienZ] = 1;
+      world[alienX][alienY+1][alienZ] = 1;
+      world[alienX][alienY+2][alienZ] = 1;
+      world[alienX][alienY+3][alienZ] = 1;
+      world[alienX][alienY+4][alienZ] = 1;
+
+      //4 legs of alien
+      world[alienX-1][alienY][alienZ] = 1;
+      world[alienX-2][alienY-1][alienZ] = 1;
+
+      world[alienX+1][alienY][alienZ] = 1;
+      world[alienX+2][alienY-1][alienZ] = 1;
+
+      world[alienX][alienY][alienZ-1] = 1;
+      world[alienX][alienY-1][alienZ-2] = 1;
+
+      world[alienX][alienY][alienZ+1] = 1;
+      world[alienX][alienY-1][alienZ+2] = 1;
+
+      //head of alien
+      //layer 1
+      world[alienX+1][alienY+2][alienZ] = 1;
+      world[alienX-1][alienY+2][alienZ] = 1;
+      world[alienX][alienY+2][alienZ+1] = 1;
+      world[alienX][alienY+2][alienZ-1] = 1;
+      //layer 2
+      world[alienX+1][alienY+3][alienZ] = 1;
+      world[alienX-1][alienY+3][alienZ] = 1;
+      world[alienX][alienY+3][alienZ+1] = 1;
+      world[alienX][alienY+3][alienZ-1] = 1;
+      world[alienX+2][alienY+3][alienZ] = 1;
+      world[alienX-2][alienY+3][alienZ] = 1;
+      world[alienX][alienY+3][alienZ+2] = 1;
+      world[alienX][alienY+3][alienZ-2] = 1;
+      //eyes
+      world[alienX+1][alienY+3][alienZ-1] = 12;
+      world[alienX+1][alienY+3][alienZ+1] = 12;
+      world[alienX-1][alienY+3][alienZ+1] = 12;
+      world[alienX-1][alienY+3][alienZ-1] = 12;
+
+      //layer 3
+      world[alienX+1][alienY+4][alienZ] = 1;
+      world[alienX-1][alienY+4][alienZ] = 1;
+      world[alienX][alienY+4][alienZ+1] = 1;
+      world[alienX][alienY+4][alienZ-1] = 1;
+
+   return;
+}
+
+void removeLander(int x, int y, int z){
+   int alienX = x;
+      int alienY = y;
+      int alienZ = z;
+
+      //stem of alien starting at base
+      world[alienX][alienY][alienZ] = 0;
+      world[alienX][alienY+1][alienZ] = 0;
+      world[alienX][alienY+2][alienZ] = 0;
+      world[alienX][alienY+3][alienZ] = 0;
+      world[alienX][alienY+4][alienZ] = 0;
+
+      //4 legs of alien
+      world[alienX-1][alienY][alienZ] = 0;
+      world[alienX-2][alienY-1][alienZ] = 0;
+
+      world[alienX+1][alienY][alienZ] = 0;
+      world[alienX+2][alienY-1][alienZ] = 0;
+
+      world[alienX][alienY][alienZ-1] = 0;
+      world[alienX][alienY-1][alienZ-2] = 0;
+
+      world[alienX][alienY][alienZ+1] = 0;
+      world[alienX][alienY-1][alienZ+2] = 0;
+
+      //head of alien
+      //layer 1
+      world[alienX+1][alienY+2][alienZ] = 0;
+      world[alienX-1][alienY+2][alienZ] = 0;
+      world[alienX][alienY+2][alienZ+1] = 0;
+      world[alienX][alienY+2][alienZ-1] = 0;
+      //layer 2
+      world[alienX+1][alienY+3][alienZ] = 0;
+      world[alienX-1][alienY+3][alienZ] = 0;
+      world[alienX][alienY+3][alienZ+1] = 0;
+      world[alienX][alienY+3][alienZ-1] = 0;
+      world[alienX+2][alienY+3][alienZ] = 0;
+      world[alienX-2][alienY+3][alienZ] = 0;
+      world[alienX][alienY+3][alienZ+2] = 0;
+      world[alienX][alienY+3][alienZ-2] = 0;
+      //eyes
+      world[alienX+1][alienY+3][alienZ-1] = 0;
+      world[alienX+1][alienY+3][alienZ+1] = 0;
+      world[alienX-1][alienY+3][alienZ+1] = 0;
+      world[alienX-1][alienY+3][alienZ-1] = 0;
+
+      //layer 3
+      world[alienX+1][alienY+4][alienZ] = 0;
+      world[alienX-1][alienY+4][alienZ] = 0;
+      world[alienX][alienY+4][alienZ+1] = 0;
+      world[alienX][alienY+4][alienZ-1] = 0;
+
+      return;
+
+}
+
+void alienMovement(){
+   int loopAlien;
+   int aaCollision;
+   float tempVelo[ALIEN_COUNT*2];
+   float tempMagnitude[ALIEN_COUNT*2];
+
+   for(loopAlien=1; loopAlien<ALIEN_COUNT*2; loopAlien++){
+      tempVelo[loopAlien] = 1;
+   }
+
+   for(loopAlien = 1; loopAlien < ALIEN_COUNT; loopAlien++){
+      //if state is searching
+   /************ state == 0 searching ************/
+      tempMagnitude[loopAlien*2] = lander[loopAlien].vx;
+      tempMagnitude[loopAlien*2+1] = lander[loopAlien].vz;
+
+      if(lander[loopAlien].state == 0 && lander[loopAlien].visible == 1 ){
+         //printf("%d\n", loopAlien);
+         removeLander((int)lander[loopAlien].base.x, (int)lander[loopAlien].base.y, (int)lander[loopAlien].base.z);
+
+         
+         //check if lander[loopAlien] needs to bouce off another lander
+         for(aaCollision=1; aaCollision<ALIEN_COUNT; aaCollision++){ //check location of the other landers loop through the other landers
+            //check if aa collision doesn't equal loopAlien so you don't compare position too itself
+            if(aaCollision != loopAlien){
+               //check if the landers are on the same height ::check if the y values are within 5 of each other
+               if( (lander[loopAlien].base.y < lander[aaCollision].base.y + 5 && lander[loopAlien].base.y >= lander[aaCollision].base.y ) || (lander[aaCollision].base.y < lander[loopAlien].base.y + 5 && lander[aaCollision].base.y >= lander[loopAlien].base.y ) ){ 
+                  //check if landers are within x +-5 and z+-5 of eachother
+                  if( (lander[aaCollision].base.x <= lander[loopAlien].base.x+5 && lander[aaCollision].base.x >= lander[loopAlien].base.x) || (lander[aaCollision].base.x >= lander[loopAlien].base.x-5 && lander[aaCollision].base.x <= lander[loopAlien].base.x) ){
+                     //check for z like above
+                     if( (lander[aaCollision].base.z <= lander[loopAlien].base.z+5 && lander[aaCollision].base.z >= lander[loopAlien].base.z) || (lander[aaCollision].base.z >= lander[loopAlien].base.z-5 && lander[aaCollision].base.z <= lander[loopAlien].base.z) ){
+                        //A collision has occured!!!! flip velos of 
+         
+                        /*FIXED::  this doesn't work because i have a perminent flip so when the check comes around for the othe rguy in search
+                        *          it will give the wrong result
+                        *          store a local var and store it it can be an array of some kind perhaps n*2 and (n*2)+1 for x and z
+                        *          then outside this for loop loopn once again and each iteration check if the alien is in a search state 
+                        *          before adjusting the velos
+                        */
+
+                        /**
+                        * FIXED::
+                        * add more checks if theres a collision
+                        * 
+                        * if collision and aliens are going the same way (only needs to be along one axis can still bounce off on the other)
+                        * just swap the velos on the axis where both are going the same direction if one behind is faster than the one in front
+                        * only change if ine will over take the other
+                        * 
+                        * 
+                        **/
+                        //check x velos
+                        if(lander[aaCollision].vx < 0 && lander[loopAlien].vx > 0){
+                           tempVelo[loopAlien*2] = -1;
+
+                        }else if(lander[aaCollision].vx > 0 && lander[loopAlien].vx < 0){
+                           tempVelo[loopAlien*2] = -1;
+                        }else if(lander[aaCollision].vx > 0 && lander[loopAlien].vx > 0){
+                           tempMagnitude[loopAlien*2] = lander[aaCollision].vx;
+                        }else if(lander[aaCollision].vx < 0 && lander[loopAlien].vx < 0){
+                           tempMagnitude[loopAlien*2] = lander[aaCollision].vx;
+                        }
+                        //check z velos
+                        if(lander[aaCollision].vz < 0 && lander[loopAlien].vz > 0){
+                           tempVelo[loopAlien*2+1] = -1;
+                        }else if(lander[aaCollision].vz > 0 && lander[loopAlien].vz < 0){
+                           tempVelo[loopAlien*2+1] = -1;
+                        }else if(lander[aaCollision].vz > 0 && lander[loopAlien].vz > 0){
+                           tempMagnitude[loopAlien*2+1] = lander[aaCollision].vz;
+                        }else if(lander[aaCollision].vz < 0 && lander[loopAlien].vz < 0){
+                           tempMagnitude[loopAlien*2+1] = lander[aaCollision].vz;
+                        }
+                     }
+                  }
+               }
+            }
+         }
+
+         
+
+         //add searching check here
+         //take location and check a radius around the alien if a human exists inside the radius make a bee line for it
+         // eventually state should be 1 if a human is detected
+   /************ state == 1 bee line to human head ************/
+      }else if(lander[loopAlien].state == 1 && lander[loopAlien].visible == 1 ){
+
+      }
+   }
+   /**
+    * finalize the velos of each alien and then set new position and draw on the map
+    * checking for edge of the world collision must happen last in this process to avoid bus error**
+    * 
+    * use the tempVelo to change the velos where collisions were detected
+    * if a collision wasn't detected the value will just be 1 so there's no harm in running through the whole loop
+    * 
+    * aliens will only bounce if they are in a searching state so cover this loop in an if statement
+    * 
+   **/
+   
+   for(loopAlien=1; loopAlien<ALIEN_COUNT; loopAlien++){
+      if(lander[loopAlien].state == 0){
+         //magnitude
+         lander[loopAlien].vx = tempMagnitude[2*loopAlien];
+         lander[loopAlien].vz = tempMagnitude[2*loopAlien+1];
+
+
+         //direction
+         lander[loopAlien].vx *= tempVelo[2*loopAlien];
+         lander[loopAlien].vz *= tempVelo[2*loopAlien+1];
+         //this should be the last thing done before updating as if it does not have the highest prioity it will cause a bus error
+         //check if it needs to bouce off an edge
+         if( lander[loopAlien].base.x + lander[loopAlien].vx > 97 || lander[loopAlien].base.x + lander[loopAlien].vx < 2 ){
+            lander[loopAlien].vx *= -1;
+         }
+         if( lander[loopAlien].base.z + lander[loopAlien].vz > 97 || lander[loopAlien].base.z + lander[loopAlien].vz < 2 ){
+            lander[loopAlien].vz *= -1;
+         }
+
+         lander[loopAlien].base.x += lander[loopAlien].vx;
+         lander[loopAlien].base.z += lander[loopAlien].vz;
+      
+      }
+
+      drawLander( (int)lander[loopAlien].base.x, (int)lander[loopAlien].base.y, (int)lander[loopAlien].base.z);
+   } 
+
+
+
+
+   
+
+   return;
+}
+
+void humanGravity(){
+
+   float gravityRate = 0.4;
+   int loop = 0;
+   for( loop = 0; loop < BODY_COUNT; loop++){
+      //x value will piggyback onto loop
+
+      if( world[ (int)fodder[loop].feet.x ][ (int)fodder[loop].feet.y-1  ][ (int)fodder[loop].feet.z  ] == 0  ){ //will fall if enter this loop
+         //update whole body in world and in fodder array
+         //update head
+         //fodder[loop].head.x = loop;
+         fodder[loop].head.y = fodder[loop].head.y - gravityRate;
+         //fodder[loop].head.z = random;
+
+      //update body
+         //fodder[loop].head.x = loop;
+         fodder[loop].body.y = fodder[loop].body.y - gravityRate;
+         //fodder[loop].head.z = random;
+
+      //update feet
+         //fodder[loop].head.x = loop;
+         fodder[loop].feet.y = fodder[loop].feet.y - gravityRate;
+         //fodder[loop].head.z = random;
+
+      //move humans in the world b\c of gravity
+         world[ (int)fodder[loop].feet.x ][ (int)fodder[loop].head.y ][ (int)fodder[loop].feet.z ] = 3;//head red
+         world[ (int)fodder[loop].feet.x ][ (int)fodder[loop].body.y ][ (int)fodder[loop].feet.z ] = 4;//body black
+         world[ (int)fodder[loop].feet.x ][ (int)fodder[loop].feet.y ][ (int)fodder[loop].feet.z ] = 7;//feet orange
+         
+         world[ (int)fodder[loop].feet.x ][ (int)fodder[loop].head.y+1 ][ (int)fodder[loop].feet.z ] = 0;//remove old head
+      }
+      // if( world[ (int)fodder[loop].feet.x ][ (int)fodder[loop].feet.y-1  ][ (int)fodder[loop].feet.z  ] != 0  ){
+      //    printf("person %d, head :: x %d y %d z %d\n", loop, (int)fodder[loop].head.x, (int)fodder[loop].head.y, (int)fodder[loop].head.z );
+      // }
+   }
+
+   return;
+}
+
+void viewMomentum(){
+   float x, y, z;
+   float oldX, oldY, oldZ;
+   float check = 1;
+   float dPlus = 0.025;
+   float dNeg = -0.025;
+   float accX = 0;
+   float accY = 0;
+   float accZ = 0;
+   float maxV = 0.6;
+   float minV = -0.6;
+   
+
+
+
+   getViewPosition(&x, &y, &z);
+   getOldViewPosition( &oldX, &oldY, &oldZ);
+
+   if(oldX == 0 && oldY == 0 && oldZ == 0){
+      oldX = x;
+      oldY = y;
+      oldZ = z;
+      movement.x = x;
+      movement.y = y;
+      movement.z = z;
+   }
+   //printf(" x = %f, y = %f, z = %f\n old x %f, old y %f, old z %f\n\n", x, y, z, oldX, oldY, oldZ);
+
+   if(movement.x != x || movement.y != y || movement.z != z){
+      if(x > movement.x){
+         dmoveX = dPlus;
+         if(count == ACCELERATION){
+            ratioX = x - movement.x;
+         }
+      } else if(x == movement.x){
+         dmoveX = 0;
+         ratioX = 1;
+      }else {
+         dmoveX = dNeg;
+         if(count == ACCELERATION){
+            ratioX = movement.x - x;
+         }
+      }
+      //x = x + check;
+
+      if(y > movement.y){
+         dmoveY = dPlus;
+         if(count == ACCELERATION){
+            ratioY = y - movement.y;
+         }
+      } else if(y == movement.y){
+         dmoveY = 0;
+         //ratioY = 1;
+      } else {
+         dmoveY = dNeg;
+         if(count == ACCELERATION){
+            ratioY = movement.y - y;
+         }
+         
+      }
+      //y = y + check;
+
+      if(z > movement.z){
+         dmoveZ = dPlus;
+         if(count == ACCELERATION){
+            ratioZ = z - movement.z;
+         }
+      } else if(z == movement.z){
+         dmoveZ = 0;
+         ratioZ = 1;
+      } else {
+         dmoveZ = dNeg;
+         if(count == ACCELERATION){
+            ratioZ = movement.z - z;
+         }
+      }
+      //z = z + check;
+      count--;
+
+   }
+
+   if(count != ACCELERATION){
+      setOldViewPosition( x, y, z);
+      oldX = x;
+      oldY = y;
+      oldZ = z;
+
+      accX = ((dmoveX * (count/20)) * ratioX);
+      accY = ((dmoveY * (count/20)) * ratioY);
+      accZ = ((dmoveZ * (count/20)) * ratioZ);
+
+      if( (accX) > maxV ){
+         accX = maxV;
+      }
+      if( (accY) > maxV ){
+         accX = maxV;
+      }
+      if( (accZ) > maxV ){
+         accX = maxV;
+      }
+      if( (accX) < minV ){
+         accX = minV;
+      }
+      if( (accY) < minV ){
+         accX = minV;
+      }
+      if( (accZ) < minV ){
+         accX = minV;
+      }
+
+      x = x + accX;
+      y = y + accY;
+      z = z + accZ;
+      
+      
+      
+      setViewPosition( x, y, z);
+      movement.x = x;
+      movement.y = y;
+      movement.z = z;
+      
+      collisionResponse();
+      count--;
+      if(count == 0){
+         count = ACCELERATION;
+         movement.x = x;
+         movement.y = y;
+         movement.z = z;
+
+      }
+
+   }
+
+
+   return;
+}
+
+void removeRayLoop(){
+   int rayLoop = 0;
+   for(rayLoop=0; rayLoop < TUBE_COUNT; rayLoop++){
+      if(tubeVisible[rayLoop] == 1){
+         ftime(&shotClock);
+         if(myRays[rayLoop].shotAt.time < shotClock.time - 5){
+            tubeVisible[rayLoop] = 0;
+         }
+      }      
+   }
+
+   return;
+}
+
 
 	/*** collisionResponse() ***/
 	/* -performs collision detection and response */
@@ -314,6 +801,7 @@ void collisionResponse() {
    y = 0.0;
    z = 0.0;
    float space = 0.15;
+   float spaceY = 0.6;
 
    getViewPosition(&x, &y, &z);
 
@@ -329,7 +817,7 @@ void collisionResponse() {
 
    /***** collision detection between all the cubes in the world and viewpoint  *****/
    //                   standard                            x++                                          y++                                                     z++                    
-   if( world[ (int)x ][ (int)y ][ (int)z ] != 0 || world[ (int)(x+space) ][ (int)y ][ (int)z ] != 0 || world[ (int)x ][ (int)(y+space) ][ (int)z ] != 0 || world[ (int)x ][ (int)y ][ (int)(z+space) ] != 0 || world[ (int)(x-space) ][ (int)y ][ (int)z ] != 0 || world[ (int)x ][ (int)(y-space) ][ (int)z ] != 0 || world[ (int)x ][ (int)y ][ (int)(z-space) ] != 0 || world[ (int)(x+space) ][ (int)(y+space) ][ (int)z ] != 0 || world[ (int)(x+space) ][ (int)y ][ (int)(z+space) ] != 0 || world[ (int)x ][ (int)(y+space) ][ (int)(z+space) ] != 0 || world[ (int)(x+space) ][ (int)(y+space) ][ (int)(z+space) ] != 0 || world[ (int)(x-space) ][ (int)(y-space) ][ (int)z ] != 0 || world[ (int)(x-space) ][ (int)y ][ (int)(z-space) ] != 0 || world[ (int)x ][ (int)(y-space) ][ (int)(z-space) ] != 0 || world[ (int)(x-space) ][ (int)(y-space) ][ (int)(z-space) ] != 0 || world[ (int)(x-space) ][ (int)y ][ (int)(z+space) ] != 0 || world[ (int)(x+space) ][ (int)y ][ (int)(z-space) ] != 0 || world[ (int)(x-space) ][ (int)(y+space) ][ (int)(z+space) ] != 0 || world[ (int)(x-space) ][ (int)(y+space) ][ (int)z ] != 0 || world[ (int)(x-space) ][ (int)(y+space) ][ (int)(z-space) ] != 0 || world[ (int)x ][ (int)(y+space) ][ (int)(z-space) ] != 0 || world[ (int)(x+space) ][ (int)(y+space) ][ (int)(z-space) ] != 0 || world[ (int)(x-space) ][ (int)(y-space) ][ (int)(z+space) ] != 0 || world[ (int)x ][ (int)(y-space) ][ (int)(z+space) ] != 0 || world[ (int)(x+space) ][ (int)(y-space) ][ (int)(z+space) ] != 0 || world[ (int)(x+space) ][ (int)(y-space) ][ (int)z ] != 0 || world[ (int)(x+space) ][ (int)(y-space) ][ (int)(z-space) ] != 0){
+   if( world[ (int)x ][ (int)y ][ (int)z ] != 0 || world[ (int)(x+space) ][ (int)y ][ (int)z ] != 0 || world[ (int)x ][ (int)(y+spaceY) ][ (int)z ] != 0 || world[ (int)x ][ (int)y ][ (int)(z+space) ] != 0 || world[ (int)(x-space) ][ (int)y ][ (int)z ] != 0 || world[ (int)x ][ (int)(y-space) ][ (int)z ] != 0 || world[ (int)x ][ (int)y ][ (int)(z-space) ] != 0 || world[ (int)(x+space) ][ (int)(y+spaceY) ][ (int)z ] != 0 || world[ (int)(x+space) ][ (int)y ][ (int)(z+space) ] != 0 || world[ (int)x ][ (int)(y+spaceY) ][ (int)(z+space) ] != 0 || world[ (int)(x+space) ][ (int)(y+spaceY) ][ (int)(z+space) ] != 0 || world[ (int)(x-space) ][ (int)(y-space) ][ (int)z ] != 0 || world[ (int)(x-space) ][ (int)y ][ (int)(z-space) ] != 0 || world[ (int)x ][ (int)(y-space) ][ (int)(z-space) ] != 0 || world[ (int)(x-space) ][ (int)(y-space) ][ (int)(z-space) ] != 0 || world[ (int)(x-space) ][ (int)y ][ (int)(z+space) ] != 0 || world[ (int)(x+space) ][ (int)y ][ (int)(z-space) ] != 0 || world[ (int)(x-space) ][ (int)(y+spaceY) ][ (int)(z+space) ] != 0 || world[ (int)(x-space) ][ (int)(y+spaceY) ][ (int)z ] != 0 || world[ (int)(x-space) ][ (int)(y+spaceY) ][ (int)(z-space) ] != 0 || world[ (int)x ][ (int)(y+spaceY) ][ (int)(z-space) ] != 0 || world[ (int)(x+space) ][ (int)(y+spaceY) ][ (int)(z-space) ] != 0 || world[ (int)(x-space) ][ (int)(y-space) ][ (int)(z+space) ] != 0 || world[ (int)x ][ (int)(y-space) ][ (int)(z+space) ] != 0 || world[ (int)(x+space) ][ (int)(y-space) ][ (int)(z+space) ] != 0 || world[ (int)(x+space) ][ (int)(y-space) ][ (int)z ] != 0 || world[ (int)(x+space) ][ (int)(y-space) ][ (int)(z-space) ] != 0){
 
       float oldX, oldY, oldZ;
       oldX = 0.0;
@@ -584,7 +1072,7 @@ void draw2D() {
 	/*  system is running */
 	/* -gravity must also implemented here, duplicate collisionResponse */
 void update() {
-   int i, j, k, loop;
+   //int i, j, k, loop;
    float *la;
 
 	/* sample animation for the test world, don't remove this code */
@@ -652,202 +1140,29 @@ void update() {
 
 	/* your code goes here */
    /****** times out rays once they've been on long enough ******/
-      int rayLoop = 0;
-      for(rayLoop=0; rayLoop < TUBE_COUNT; rayLoop++){
-         if(tubeVisible[rayLoop] == 1){
-            ftime(&shotClock);
-            if(myRays[rayLoop].shotAt.time < shotClock.time - 5){
-               tubeVisible[rayLoop] = 0;
-            }
-            
-         }      
+      removeRayLoop();
+      
+   /****** alien movement ******/
+      ftime(&newAT);
+      float diffA = 0.0;
+      diffA = newAT.millitm - oldAT.millitm;
+      if( diffA > 10 || diffA < -10){
+         ftime(&oldAT);
+      
+         alienMovement();
       }
-
-
-
-
-
-   /****** Gravity ******/
+      
+   /****** Gravity && momentum ******/
       ftime(&newT);
-
       /* newT should be checked here to curb framerate */
       float diff = 0.0;
       diff = newT.millitm - oldT.millitm;
-      //printf("%lf\n", diff);
-      //diff *= 1000;
-
       if( diff > 25 || diff < -25){
          ftime(&oldT);
-         //oldT.time = newT.time;
-         /****** Gravity ******/
-         float gravityRate = 0.4;
-         for( loop = 0; loop < BODY_COUNT; loop++){
-            //x value will piggyback onto loop
-
-            if( world[ (int)fodder[loop].feet.x ][ (int)fodder[loop].feet.y-1  ][ (int)fodder[loop].feet.z  ] == 0  ){ //will fall if enter this loop
-               //update whole body in world and in fodder array
-               //update head
-               //fodder[loop].head.x = loop;
-               fodder[loop].head.y = fodder[loop].head.y - gravityRate;
-               //fodder[loop].head.z = random;
-
-            //update body
-               //fodder[loop].head.x = loop;
-               fodder[loop].body.y = fodder[loop].body.y - gravityRate;
-               //fodder[loop].head.z = random;
-
-            //update feet
-               //fodder[loop].head.x = loop;
-               fodder[loop].feet.y = fodder[loop].feet.y - gravityRate;
-               //fodder[loop].head.z = random;
-
-            //move humans in the world b\c of gravity
-               world[ (int)fodder[loop].feet.x ][ (int)fodder[loop].head.y ][ (int)fodder[loop].feet.z ] = 3;//head red
-               world[ (int)fodder[loop].feet.x ][ (int)fodder[loop].body.y ][ (int)fodder[loop].feet.z ] = 4;//body black
-               world[ (int)fodder[loop].feet.x ][ (int)fodder[loop].feet.y ][ (int)fodder[loop].feet.z ] = 7;//feet orange
-               
-               world[ (int)fodder[loop].feet.x ][ (int)fodder[loop].head.y+1 ][ (int)fodder[loop].feet.z ] = 0;//remove old head
-            }
-            // if( world[ (int)fodder[loop].feet.x ][ (int)fodder[loop].feet.y-1  ][ (int)fodder[loop].feet.z  ] != 0  ){
-            //    printf("person %d, head :: x %d y %d z %d\n", loop, (int)fodder[loop].head.x, (int)fodder[loop].head.y, (int)fodder[loop].head.z );
-            // }
-         }
-
-
-      
+   /****** Gravity ******/
+         humanGravity();
    /****** Momentum ******/
-         float x, y, z;
-         float oldX, oldY, oldZ;
-         float check = 1;
-         float dPlus = 0.025;
-         float dNeg = -0.025;
-         float accX = 0;
-         float accY = 0;
-         float accZ = 0;
-         float maxV = 0.6;
-         float minV = -0.6;
-         
-
-
-
-         getViewPosition(&x, &y, &z);
-         getOldViewPosition( &oldX, &oldY, &oldZ);
-
-         if(oldX == 0 && oldY == 0 && oldZ == 0){
-            oldX = x;
-            oldY = y;
-            oldZ = z;
-            movement.x = x;
-            movement.y = y;
-            movement.z = z;
-         }
-         //printf(" x = %f, y = %f, z = %f\n old x %f, old y %f, old z %f\n\n", x, y, z, oldX, oldY, oldZ);
-
-         if(movement.x != x || movement.y != y || movement.z != z){
-            if(x > movement.x){
-               dmoveX = dPlus;
-               if(count == ACCELERATION){
-                  ratioX = x - movement.x;
-               }
-            } else if(x == movement.x){
-               dmoveX = 0;
-               ratioX = 1;
-            }else {
-               dmoveX = dNeg;
-               if(count == ACCELERATION){
-                  ratioX = movement.x - x;
-               }
-            }
-            //x = x + check;
-
-            if(y > movement.y){
-               dmoveY = dPlus;
-               if(count == ACCELERATION){
-                  ratioY = y - movement.y;
-               }
-            } else if(y == movement.y){
-               dmoveY = 0;
-               //ratioY = 1;
-            } else {
-               dmoveY = dNeg;
-               if(count == ACCELERATION){
-                  ratioY = movement.y - y;
-               }
-               
-            }
-            //y = y + check;
-
-            if(z > movement.z){
-               dmoveZ = dPlus;
-               if(count == ACCELERATION){
-                  ratioZ = z - movement.z;
-               }
-            } else if(z == movement.z){
-               dmoveZ = 0;
-               ratioZ = 1;
-            } else {
-               dmoveZ = dNeg;
-               if(count == ACCELERATION){
-                  ratioZ = movement.z - z;
-               }
-            }
-            //z = z + check;
-            count--;
-
-         }
-
-         if(count != ACCELERATION){
-            setOldViewPosition( x, y, z);
-            oldX = x;
-            oldY = y;
-            oldZ = z;
-
-            accX = ((dmoveX * (count/20)) * ratioX);
-            accY = ((dmoveY * (count/20)) * ratioY);
-            accZ = ((dmoveZ * (count/20)) * ratioZ);
-
-            if( (accX) > maxV ){
-               accX = maxV;
-            }
-            if( (accY) > maxV ){
-               accX = maxV;
-            }
-            if( (accZ) > maxV ){
-               accX = maxV;
-            }
-            if( (accX) < minV ){
-               accX = minV;
-            }
-            if( (accY) < minV ){
-               accX = minV;
-            }
-            if( (accZ) < minV ){
-               accX = minV;
-            }
-
-            x = x + accX;
-            y = y + accY;
-            z = z + accZ;
-            
-            
-           
-            setViewPosition( x, y, z);
-            movement.x = x;
-            movement.y = y;
-            movement.z = z;
-            
-            collisionResponse();
-            count--;
-            if(count == 0){
-               count = ACCELERATION;
-               movement.x = x;
-               movement.y = y;
-               movement.z = z;
-
-            }
-
-         }
-
+         viewMomentum();
       }
 
    /* your code goes here */
@@ -963,7 +1278,7 @@ int main(int argc, char** argv){
       }
    } else {
 
-      //initializing my attempt
+   /*************** initializing my world ***************/
       FILE *fp;
       fp = fopen("ground.pgm", "r");
 
@@ -973,6 +1288,9 @@ int main(int argc, char** argv){
 
       int loop;
       int random;
+      int randomX;
+      int xVal;
+      int groundLevel;
       int height=0;
       char str[10];
       movement.x = 0;
@@ -990,7 +1308,7 @@ int main(int argc, char** argv){
          //printf("%s\n", str);
       }
       
-      
+      //make ground from pgm file
       for(i=0; i<100; i++){
          for(j=0; j<100; j++){
 
@@ -1002,6 +1320,7 @@ int main(int argc, char** argv){
             do{
                if( height > 8){
                   world[i][height][j] = 10;//snow
+                  //printf("the max height is :: %d\n", height);
                }
                else if(height < 5){
                   world[i][height][j] = 2;//water
@@ -1018,35 +1337,152 @@ int main(int argc, char** argv){
       fclose(fp);
       //ground loading complete
 
-      //*************** load humans into the world ***************//
+   //*************** load humans into the world ***************//
 
       for(loop = 0; loop < BODY_COUNT; loop++){
-         
+
+         //just for testing take out when testing over and body count needs to be changed back too 100
+         randomX = rand() % 10;// z value 
+         xVal = loop * 10;
+         xVal += randomX;
+         //make sure a human is far enough away from the edge for aliens to abduct for x borders
+         if(xVal > 97){
+            xVal = 97;
+         } else if( xVal < 2){
+            xVal = 2;
+         }
+
+
          //x needs to be looped through will piggyback on 'loop'; all will start at 49, 48, 47; z will be random
 
-         random = rand() % BODY_COUNT;// z value 
+         //make sure a human is far enough away from the edge for aliens to abduct for z borders
+         random = rand() % WORLDZ;// z value 
+         if(random > 97){
+            random = 97;
+         } else if( random < 2){
+            random = 2;
+         }
+
+         while( world[xVal][6][random] == 0 || world[xVal+2][8][random] != 0|| world[xVal-2][8][random] != 0 || world[xVal][8][random+2] != 0 || world[xVal][8][random-2] != 0 || world[xVal+1][8][random] != 0|| world[xVal-1][8][random] != 0 || world[xVal][8][random+1] != 0 || world[xVal][8][random-1] != 0){
+            random ++;
+            if(random > 97){
+               random = 2;
+            }
+
+         }
+
+         //create a loop here to loop throught the start at one unit above highest possible ground at these x, z coordinates to find the ground and place the people from there
+         for( groundLevel = 11; groundLevel>0; groundLevel-- ){
+            if(world[xVal][groundLevel][random] != 0 ){
+               groundLevel++;
+               break;
+            }
+         }
+
 
       //make head
-         fodder[loop].head.x = loop;
-         fodder[loop].head.y = 49;
+         fodder[loop].head.x = xVal;
+         fodder[loop].head.y = groundLevel + 2;
          fodder[loop].head.z = random;
 
       //make body
-         fodder[loop].body.x = loop;
-         fodder[loop].body.y = 48;
+         fodder[loop].body.x = xVal;
+         fodder[loop].body.y = groundLevel + 1;
          fodder[loop].body.z = random;
 
       //make feet
-         fodder[loop].feet.x = loop;
-         fodder[loop].feet.y = 47;
+         fodder[loop].feet.x = xVal;
+         fodder[loop].feet.y = groundLevel;
          fodder[loop].feet.z = random;
 
+      //used to test gravity sets people at the top of the world
+         // fodder[loop].head.y = 49;
+         // fodder[loop].body.y = 48;
+         // fodder[loop].feet.y = 47;
+
       //place humans in the world at the top of the sky
-         world[loop][49][random] = 3;//head red
-         world[loop][48][random] = 4;//body black
-         world[loop][47][random] = 7;//feet orange
+         world[xVal][groundLevel + 2][random] = 3;//head red
+         world[xVal][groundLevel + 1][random] = 4;//body black
+         world[xVal][groundLevel][random] = 7;//feet orange
 
       }
+   //*************** load aliens/Landers into the world ***************//
+
+      
+      //coordinates of landers
+      int alienX, alienY, alienZ;
+      int randVelo = 0;
+      ftime(&oldAT);
+
+      //drawLander(alienX, alienY, alienZ);
+
+      for(loop=1; loop<ALIEN_COUNT; loop++){
+
+         if(loop == 0){
+            alienX = 15;
+         }
+         alienX = (loop * 20)-6;
+         alienY = 30;// + (loop * 3);
+         alienZ = rand() % WORLDZ;
+         if(alienZ > 97){
+            alienZ = 97;
+         }
+         if(alienZ < 2){
+            alienZ = 2;
+         }
+
+
+
+         lander[loop].base.x = alienX;
+         lander[loop].base.y = alienY;
+         lander[loop].base.z = alienZ;
+
+         lander[loop].visible = 1;
+
+         randVelo = rand() % 4;
+         if(randVelo == 0){
+            lander[loop].vx = 0.1;
+         }
+         if(randVelo == 1){
+            lander[loop].vx = -0.1;
+         }
+         if(randVelo == 2){
+            lander[loop].vx = 0.3;
+         }
+         if(randVelo == 3){
+            lander[loop].vx = -0.3;
+         }
+         if(randVelo == 4){
+            lander[loop].vx = 0.2;
+         }
+
+         randVelo = rand() % 4;
+         if(randVelo == 0){
+            lander[loop].vz = 0.1;
+         }
+         if(randVelo == 1){
+            lander[loop].vz = -0.1;
+         }
+         if(randVelo == 2){
+            lander[loop].vz = 0.3;
+         }
+         if(randVelo == 3){
+            lander[loop].vz = -0.3;
+         }
+         if(randVelo == 4){
+            lander[loop].vz = 0.2;
+         }
+
+         // lander[loop].vx = 0.5;
+         // lander[loop].vz = 0.5;
+         lander[loop].vy = 0; // because initial state is searching so it should not move vertically initially
+         lander[loop].state = 0;
+         lander[loop].searchingHeight = lander[loop].base.y;
+
+         drawLander((int)lander[loop].base.x, (int)lander[loop].base.y, (int)lander[loop].base.z);
+
+      }
+
 
 
 
