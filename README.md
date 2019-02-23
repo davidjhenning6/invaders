@@ -228,13 +228,19 @@ cis4820
 ### UPDATED TODO LIST ###
 
 1. draw aliens on the map DONE
+DONE forgot to remove from map when not visible
 
-2. aliens searching
+2. aliens searching DONE
 - search radius its like a cylinder
 
-3. beeline to pick up human
+*** i'll need to reset the target at some point
 
-4. grab human and fly away
+i changed aliens to update .25 instead of .1
+
+
+3. beeline to pick up human DONE
+
+4. grab human and fly away DONE
 - disappear with human when hit roof
 
 5. if shot when holding human drop it and return to searching height

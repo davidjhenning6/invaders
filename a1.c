@@ -143,6 +143,7 @@ typedef struct Coordinate{
 typedef struct Alien{
    xyz base; // this will represent the base of the aliens stem
    xyz target; // the coordinates of the human head so should end up one above the target?? could make the coordinates the target for one above the human head
+   int targetID;// this variable holds onto the human's place in the fodder array this will make it much less computationally intensive
    int visible; // this should be default 1 meaning the alien is default visible
    float vx;
    float vz;
@@ -200,6 +201,8 @@ expire myRays[TUBE_COUNT];
 
 void drawLander(int, int, int);
 void removeLander(int, int, int);
+void drawHuman(int x, int y, int z);
+void removeHuman(int x, int y, int z);
 void alienMovement();
 void humanGravity();
 void viewMomentum();
@@ -464,6 +467,29 @@ void removeLander(int x, int y, int z){
 
 }
 
+/**
+ * draws/removes the humans given the coordinates of the "head"
+ * call remove before draw or it won't work
+ * will not update fodder[] at all
+ * only used for changing the world[][][] array
+ * 3 //head red
+ * 4 //body black
+ * 7 //feet orange
+*/ 
+void drawHuman(int x, int y, int z){
+   world[x][y][z] = 3;
+   world[x][y-1][z] = 4;
+   world[x][y-2][z] = 7;
+   return;
+}
+
+void removeHuman(int x, int y, int z){
+   world[x][y][z] = 0;
+   world[x][y-1][z] = 0;
+   world[x][y-2][z] = 0;
+   return;
+}
+
 void alienMovement(){
    int loopAlien;
    int aaCollision;
@@ -477,6 +503,7 @@ void alienMovement(){
       tempVelo[loopAlien] = 1;
    }
 
+   //llop through each lander
    for(loopAlien = 1; loopAlien < ALIEN_COUNT; loopAlien++){
       //if state is searching
    /************ state == 0 searching ************/
@@ -503,21 +530,21 @@ void alienMovement(){
                         //A collision has occured!!!! flip velos of 
          
                         /*FIXED::  this doesn't work because i have a perminent flip so when the check comes around for the othe rguy in search
-                        *          it will give the wrong result
-                        *          store a local var and store it it can be an array of some kind perhaps n*2 and (n*2)+1 for x and z
-                        *          then outside this for loop loopn once again and each iteration check if the alien is in a search state 
-                        *          before adjusting the velos
-                        */
+                           *          it will give the wrong result
+                           *          store a local var and store it it can be an array of some kind perhaps n*2 and (n*2)+1 for x and z
+                           *          then outside this for loop loopn once again and each iteration check if the alien is in a search state 
+                           *          before adjusting the velos
+                           */
 
-                        /**
-                        * FIXED::
-                        * add more checks if theres a collision
-                        * 
-                        * if collision and aliens are going the same way (only needs to be along one axis can still bounce off on the other)
-                        * just swap the velos on the axis where both are going the same direction if one behind is faster than the one in front
-                        * only change if ine will over take the other
-                        * 
-                        * 
+                           /**
+                           * FIXED::
+                           * add more checks if theres a collision
+                           * 
+                           * if collision and aliens are going the same way (only needs to be along one axis can still bounce off on the other)
+                           * just swap the velos on the axis where both are going the same direction if one behind is faster than the one in front
+                           * only change if ine will over take the other
+                           * 
+                           * 
                         **/
                         //check x velos
                         if(lander[aaCollision].vx < 0 && lander[loopAlien].vx > 0){
@@ -566,7 +593,7 @@ void alienMovement(){
              * their target 
              * 
           **/
-//something is preventing them from moving they're probably finding a human and stopping
+
          for(humanLoop = 0; humanLoop < BODY_COUNT; humanLoop++){
             //check if these are within the radius 
             //then take y of the head +1 and make a beeline
@@ -586,7 +613,17 @@ void alienMovement(){
                      if(notTarget==0){
                         lander[loopAlien].target.x = fodder[humanLoop].head.x;
                         lander[loopAlien].target.z = fodder[humanLoop].head.z;
-                        lander[loopAlien].target.y = (fodder[humanLoop].head.y)+2;
+                        lander[loopAlien].target.y = (fodder[humanLoop].head.y)+1;
+
+                        //set targetiD for alien 
+                        //targetID is the array position of the human in fodder
+                        int findID;
+                        for(findID = 0; findID < BODY_COUNT; findID++){
+                           if( fodder[findID].head.x == lander[loopAlien].target.x && fodder[findID].head.z == lander[loopAlien].target.z ){
+                              lander[loopAlien].targetID = findID;
+                              break;
+                           }
+                        }
 
                         lander[loopAlien].state = 1;
 
@@ -630,6 +667,16 @@ void alienMovement(){
          if(lander[loopAlien].base.z == lander[loopAlien].target.z){
             lander[loopAlien].vz = 0;
          }
+
+   /************ state == 2 abduct human ************/
+      }else if(lander[loopAlien].state == 2 && lander[loopAlien].visible == 1 ){
+         lander[loopAlien].vy = 0.2;
+
+         removeHuman(fodder[ lander[loopAlien].targetID ].head.x, fodder[ lander[loopAlien].targetID ].head.y, fodder[ lander[loopAlien].targetID ].head.z);
+         fodder[ lander[loopAlien].targetID ].head.y += 0.2;
+         drawHuman(fodder[ lander[loopAlien].targetID ].head.x, fodder[ lander[loopAlien].targetID ].head.y, fodder[ lander[loopAlien].targetID ].head.z);
+         
+
 
       }
    }
@@ -692,7 +739,19 @@ void alienMovement(){
          lander[loopAlien].base.x -= lander[loopAlien].vx;
          lander[loopAlien].base.z -= lander[loopAlien].vz;
          lander[loopAlien].base.y -= lander[loopAlien].vy;
+         if(lander[loopAlien].vx == 0 && lander[loopAlien].vy == 0 && lander[loopAlien].vz == 0){
+            lander[loopAlien].state = 2;
+         }
+         
+      }else if(lander[loopAlien].state == 2){
+         if( lander[loopAlien].base.y + lander[loopAlien].vy > 44 ){
+            lander[loopAlien].visible = 0;
+            removeHuman(fodder[ lander[loopAlien].targetID ].head.x, fodder[ lander[loopAlien].targetID ].head.y, fodder[ lander[loopAlien].targetID ].head.z);
 
+         } else{
+            lander[loopAlien].base.y += lander[loopAlien].vy;
+         }
+         
       }
 
       if(lander[loopAlien].visible == 1){
@@ -1085,26 +1144,26 @@ void draw2D() {
          xe = 0;
          ze = 0;
          for(i = 1; i < ALIEN_COUNT; i++){
-            x = lander[i].base.x;
-            z = lander[i].base.z;
-            xb = screenWidth - ((110 * smallW) - (x * smallW));
-            zb = screenHeight - ((110 * smallH) - (z * smallH));
-            xe = xb;
-            ze = zb;
+            if(lander[i].visible == 1){
+               x = lander[i].base.x;
+               z = lander[i].base.z;
+               xb = screenWidth - ((110 * smallW) - (x * smallW));
+               zb = screenHeight - ((110 * smallH) - (z * smallH));
+               xe = xb;
+               ze = zb;
 
-            //horizontal line
-            xb -= (smallW * 1.5);
-            xe += (smallH * 1.5);
-            draw2Dline( xb, zb, xe, ze, 2);
-            //reset
-            xb += (smallW * 1.5);
-            xe -= (smallH * 1.5);
-            //vertical line
-            zb -= (smallW * 1.5);
-            ze += (smallH * 1.5);
-            draw2Dline( xb, zb, xb, ze, 2);
-            
-            
+               //horizontal line
+               xb -= (smallW * 1.5);
+               xe += (smallH * 1.5);
+               draw2Dline( xb, zb, xe, ze, 2);
+               //reset
+               xb += (smallW * 1.5);
+               xe -= (smallH * 1.5);
+               //vertical line
+               zb -= (smallW * 1.5);
+               ze += (smallH * 1.5);
+               draw2Dline( xb, zb, xb, ze, 2);
+            }
 
 
          }
@@ -1193,25 +1252,27 @@ void draw2D() {
          xe = 0;
          ze = 0;
          for(i = 1; i < ALIEN_COUNT; i++){
-            x = lander[i].base.x * 2;
-            z = lander[i].base.z * 2;
-            xb = screenWidth - ((300 * smallW) - (x * smallW));
-            zb = screenHeight - ((250 * smallH) - (z * smallH));
-            
-            xe = xb;
-            ze = zb;
+            if(lander[i].visible == 1){
+               x = lander[i].base.x * 2;
+               z = lander[i].base.z * 2;
+               xb = screenWidth - ((300 * smallW) - (x * smallW));
+               zb = screenHeight - ((250 * smallH) - (z * smallH));
+               
+               xe = xb;
+               ze = zb;
 
-            //horizontal line
-            xb -= (smallW * 2.5);
-            xe += (smallH * 2.5);
-            draw2Dline( xb, zb, xe, ze, 3);
-            //reset
-            xb += (smallW * 2.5);
-            xe -= (smallH * 2.5);
-            //vertical line
-            zb -= (smallW * 2.5);
-            ze += (smallH * 2.5);
-            draw2Dline( xb, zb, xb, ze, 3);
+               //horizontal line
+               xb -= (smallW * 2.5);
+               xe += (smallH * 2.5);
+               draw2Dline( xb, zb, xe, ze, 3);
+               //reset
+               xb += (smallW * 2.5);
+               xe -= (smallH * 2.5);
+               //vertical line
+               zb -= (smallW * 2.5);
+               ze += (smallH * 2.5);
+               draw2Dline( xb, zb, xb, ze, 3);
+            }
           }
 
 
@@ -1610,6 +1671,7 @@ int main(int argc, char** argv){
          lander[loop].target.y = 0;
          lander[loop].target.z = 0;
 
+         //1 is visible the default
          lander[loop].visible = 1;
 
          randVelo = rand() % 4;
