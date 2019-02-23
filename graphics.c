@@ -461,7 +461,10 @@ GLfloat dorange[]   = {0.5, 0.32, 0.0, 1.0};
       //snow//glMaterialfv(GL_FRONT, GL_AMBIENT_AND_DIFFUSE, black);
    }else if (colourID == 12) { 
       glMaterialfv(GL_FRONT, GL_AMBIENT_AND_DIFFUSE, black);
-   }else {
+
+   }else if(colourID == 15){
+      //attempt to fix snow error
+   } else {
 		/* user define colour */
       if (uColourUsed[ colourID ] != 1) {
          printf("ERROR, attempt to access colour which is not allocated.\n");
