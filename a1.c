@@ -143,7 +143,7 @@ typedef struct Coordinate{
 typedef struct Alien{
    xyz base; // this will represent the base of the aliens stem
    xyz target; // the coordinates of the human head so should end up one above the target?? could make the coordinates the target for one above the human head
-   int targetID;// this variable holds onto the human's place in the fodder array this will make it much less computationally intensive
+   int targetID;// this variable holds onto the human's place in the fodder array this will make it much less computationally intensive //not used to check shared targets just used to save time
    int visible; // this should be default 1 meaning the alien is default visible
    float vx;
    float vz;
@@ -156,6 +156,7 @@ typedef struct Humans{
    xyz head;
    xyz body;
    xyz feet;
+   int visible; //this should be default 1 meaning the human is default visible
 }human;
 
 typedef struct myPosition{
@@ -303,30 +304,46 @@ void fireTube(){
                prevX = (int)cubex;
                prevY = (int)cubey;
                prevZ = (int)cubez;
+
+      //if human is shot i now have to erase it and have the lander carrying it return to searching
+      //have to check which human has been shot!!
+               int humanLoop;
+               int tempX, tempZ;
+               for(humanLoop=0; humanLoop < BODY_COUNT; humanLoop++){
+                  //printf("hit::%f %f      stock::%f %f \n", cubex, cubez, fodder[humanLoop].head.x, fodder[humanLoop].head.z);
+                  tempX = (int)fodder[humanLoop].head.x;
+                  tempZ = (int)fodder[humanLoop].head.z;
+                  if( tempX == (int)cubex && tempZ == (int)cubez ){
+                     //printf("target located\n");
+                     removeHuman(fodder[humanLoop].head.x, fodder[humanLoop].head.y, fodder[humanLoop].head.z);
+                     fodder[humanLoop].visible = 0;
+                     break;
+                  }
+               }
+               //use humanLoop and match it to a landers targetID
+               int landerLoop;
+               for(landerLoop=1; landerLoop < ALIEN_COUNT; landerLoop++){
+                  if(humanLoop == lander[landerLoop].targetID){
+                     //printf("target hit\n");
+                     lander[landerLoop].state = 3;
+                  //reset the target to 0 so other aliens don't mistake the currently picked one with one dropped
+                  //redundent here since it doesn't exist anymore but will be needed when the alien is the thing shot
+                     lander[landerLoop].target.x = 0;
+                     lander[landerLoop].target.y = 0;
+                     lander[landerLoop].target.z = 0;
+                     break;
+                  }
+               }
             }
-        }
-         
+         }  
       }
-      
-      
-
    }
-
-   
-
-
-   
-
-
-
-
    ftime(&myRays[rayCount].shotAt);
    //createTube(1, x, y, 20, 60, 20, 60, 2);
    rayCount++;
    if(rayCount == TUBE_COUNT){
       rayCount = 0;
    }
-
 
    return;
 }
@@ -597,13 +614,14 @@ void alienMovement(){
          for(humanLoop = 0; humanLoop < BODY_COUNT; humanLoop++){
             //check if these are within the radius 
             //then take y of the head +1 and make a beeline
-            if( lander[loopAlien].base.x - fodder[humanLoop].head.x <= SONAR && lander[loopAlien].base.x - fodder[humanLoop].head.x >= -SONAR){
-               if( lander[loopAlien].base.z - fodder[humanLoop].head.z <= SONAR && lander[loopAlien].base.z - fodder[humanLoop].head.z >= -SONAR){
+            if( lander[loopAlien].base.x - fodder[humanLoop].head.x <= SONAR && lander[loopAlien].base.x - fodder[humanLoop].head.x >= -SONAR && fodder[humanLoop].visible == 1){
+               if( lander[loopAlien].base.z - fodder[humanLoop].head.z <= SONAR && lander[loopAlien].base.z - fodder[humanLoop].head.z >= -SONAR && fodder[humanLoop].visible == 1){
                
                   float distance = 0.0;
                   distance = sqrt( pow(lander[loopAlien].base.x - fodder[humanLoop].head.x, 2) + pow( lander[loopAlien].base.z - fodder[humanLoop].head.z, 2) );
                   if(distance <= SONAR){
 
+                  //loop through checking what all the landers targets are
                      for(targetCollision=1; targetCollision<ALIEN_COUNT; targetCollision++){
                         if( lander[targetCollision].target.x == fodder[humanLoop].head.x && lander[targetCollision].target.z == fodder[humanLoop].head.z ){
                            notTarget++;
@@ -670,13 +688,14 @@ void alienMovement(){
 
    /************ state == 2 abduct human ************/
       }else if(lander[loopAlien].state == 2 && lander[loopAlien].visible == 1 ){
-         lander[loopAlien].vy = 0.2;
+         lander[loopAlien].vy = 0.1;
 
          removeHuman(fodder[ lander[loopAlien].targetID ].head.x, fodder[ lander[loopAlien].targetID ].head.y, fodder[ lander[loopAlien].targetID ].head.z);
-         fodder[ lander[loopAlien].targetID ].head.y += 0.2;
+         fodder[ lander[loopAlien].targetID ].head.y += 0.1;
          drawHuman(fodder[ lander[loopAlien].targetID ].head.x, fodder[ lander[loopAlien].targetID ].head.y, fodder[ lander[loopAlien].targetID ].head.z);
-         
-
+   /************ state == 3 return to human searching altitude ************/
+      }else if(lander[loopAlien].state == 3 && lander[loopAlien].visible == 1 ){
+         lander[loopAlien].vy = 0.2;
 
       }
    }
@@ -691,6 +710,7 @@ void alienMovement(){
     * 
    **/
    
+   /************ this loop sets the new position and draws the lander in everything before this should only change the velos! ************/
    for(loopAlien=1; loopAlien<ALIEN_COUNT; loopAlien++){
       if(lander[loopAlien].state == 0){
          //magnitude
@@ -747,6 +767,57 @@ void alienMovement(){
          if( lander[loopAlien].base.y + lander[loopAlien].vy > 44 ){
             lander[loopAlien].visible = 0;
             removeHuman(fodder[ lander[loopAlien].targetID ].head.x, fodder[ lander[loopAlien].targetID ].head.y, fodder[ lander[loopAlien].targetID ].head.z);
+            fodder[ lander[loopAlien].targetID ].visible = 0;
+         } else{
+            lander[loopAlien].base.y += lander[loopAlien].vy;
+         }
+         
+      }else if(lander[loopAlien].state == 3){
+         if(lander[loopAlien].searchingHeight <= lander[loopAlien].base.y){
+            
+            lander[loopAlien].state = 0;
+         //add new x,z velos to the lander
+            int randVelo, randVeloZ;
+            randVelo = rand() % 4;
+            if(randVelo == 0){
+               lander[loopAlien].vx = 0.1;
+            }
+            if(randVelo == 1){
+               lander[loopAlien].vx = -0.1;
+            }
+            if(randVelo == 2){
+               lander[loopAlien].vx = 0.3;
+            }
+            if(randVelo == 3){
+               lander[loopAlien].vx = -0.3;
+            }
+            if(randVelo == 4){
+               lander[loopAlien].vx = 0.2;
+            }
+
+            //this loop prevents the alien having the same x and z velo causing it to get stuck in the long diagonal of the world
+            do{
+               randVeloZ = rand() % 4;
+            }while(randVelo == randVeloZ);
+            
+            if(randVeloZ == 0){
+               lander[loopAlien].vz = 0.1;
+            }
+            if(randVeloZ == 1){
+               lander[loopAlien].vz = -0.1;
+            }
+            if(randVeloZ == 2){
+               lander[loopAlien].vz = 0.3;
+            }
+            if(randVeloZ == 3){
+               lander[loopAlien].vz = -0.3;
+            }
+            if(randVeloZ == 4){
+               lander[loopAlien].vz = 0.2;
+            }
+
+
+
 
          } else{
             lander[loopAlien].base.y += lander[loopAlien].vy;
@@ -1124,18 +1195,18 @@ void draw2D() {
           int xe = 0;
           int ze = 0;
          for(i = 0; i < BODY_COUNT; i++){
-            x = fodder[i].head.x;
-            z = fodder[i].head.z;
-             xb = screenWidth - ((110 * smallW) - (x * smallW));
-             zb = screenHeight - ((110 * smallH) - (z * smallH));
-             xe = screenWidth - ((110 * smallW) - (x * smallW));
-             ze = screenHeight - ((110 * smallH) - (z * smallH));
-             xe += (smallW * 1.5);
-             ze += (smallH * 1.5);
-             
-             
-             
-            draw2Dbox( xb, zb, xe, ze);
+            if(fodder[i].visible == 1){
+               x = fodder[i].head.x;
+               z = fodder[i].head.z;
+               xb = screenWidth - ((110 * smallW) - (x * smallW));
+               zb = screenHeight - ((110 * smallH) - (z * smallH));
+               xe = screenWidth - ((110 * smallW) - (x * smallW));
+               ze = screenHeight - ((110 * smallH) - (z * smallH));
+               xe += (smallW * 1.5);
+               ze += (smallH * 1.5);
+                 
+               draw2Dbox( xb, zb, xe, ze);
+            }
          }
    //draw the Landers on the map  
          set2Dcolour(green);    
@@ -1232,18 +1303,18 @@ void draw2D() {
           int xe = 0;
           int ze = 0;
           for(i = 0; i < BODY_COUNT; i++){
-              x = fodder[i].head.x * 2;
-              z = fodder[i].head.z * 2;
-              xb = screenWidth - ((300 * smallW) - (x * smallW));
-              zb = screenHeight - ((250 * smallH) - (z * smallH));
-              xe = screenWidth - ((300 * smallW) - (x * smallW));
-              ze = screenHeight - ((250 * smallH) - (z * smallH));
-              xe += (smallW * 2);
-              ze += (smallH * 2);
+             if(fodder[i].visible == 1){
+               x = fodder[i].head.x * 2;
+               z = fodder[i].head.z * 2;
+               xb = screenWidth - ((300 * smallW) - (x * smallW));
+               zb = screenHeight - ((250 * smallH) - (z * smallH));
+               xe = screenWidth - ((300 * smallW) - (x * smallW));
+               ze = screenHeight - ((250 * smallH) - (z * smallH));
+               xe += (smallW * 2);
+               ze += (smallH * 2);
               
-              
-              
-              draw2Dbox( xb, zb, xe, ze);
+               draw2Dbox( xb, zb, xe, ze);
+             }
           }
    //draw all the Landers on the map
          set2Dcolour(green);
@@ -1606,7 +1677,8 @@ int main(int argc, char** argv){
                break;
             }
          }
-
+      //make human visible
+         fodder[loop].visible = 1;
 
       //make head
          fodder[loop].head.x = xVal;

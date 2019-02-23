@@ -248,3 +248,19 @@ i changed aliens to update .25 instead of .1
 6. if human drops from a certain height than human disappears when it hits the ground
 
 
+
+
+to make alien leave
+when human shot
+
+human shot switch alien to return to search height state
+set its velo and  create the 2 new if else sections
+
+remove human
+
+must add an visible value to human to control if they are shown on the map or not
+
+//reset the target to 0 so other aliens don't mistake the currently picked one with one dropped
+//redundent here since it doesn't exist anymore but will be needed when the alien is the thing shot
+
+
