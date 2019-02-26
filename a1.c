@@ -157,6 +157,8 @@ typedef struct Humans{
    xyz body;
    xyz feet;
    int visible; //this should be default 1 meaning the human is default visible
+   int gravity; //this should be default 1 meaning the human is effected by gravity as a default
+   int markedForDeath; //this should be default 0 meaning humans won't be killed by default this will be changed to 1 when a human is dropped from a height greater than 10
 }human;
 
 typedef struct myPosition{
@@ -202,6 +204,7 @@ expire myRays[TUBE_COUNT];
 
 void drawLander(int, int, int);
 void removeLander(int, int, int);
+int landerHitDetection(int, int, int);
 void drawHuman(int x, int y, int z);
 void removeHuman(int x, int y, int z);
 void alienMovement();
@@ -246,6 +249,8 @@ void fireTube(){
    //for moving past a person in ray collision
    int prevX, prevY, prevZ;
    int curX, curY, curZ;
+
+   int prevLanderId = 0;
 
    getViewPosition(&x, &y, &z);
    x *= -1;
@@ -320,7 +325,7 @@ void fireTube(){
                      break;
                   }
                }
-               //use humanLoop and match it to a landers targetID
+               //use humanLoop and match it to a landers targetID// used to identify the lander that is holding the found human
                int landerLoop;
                for(landerLoop=1; landerLoop < ALIEN_COUNT; landerLoop++){
                   if(humanLoop == lander[landerLoop].targetID){
@@ -333,6 +338,54 @@ void fireTube(){
                      lander[landerLoop].target.z = 0;
                      break;
                   }
+               }
+            } else if(world[(int)cubex][(int)cubey][(int)cubez] == 1 || world[(int)cubex][(int)cubey][(int)cubez] == 12){ //detect alien hit by ray look for colours 1 & 12
+               //alien body and eyes will have to figure out alien body detection so alert doesn't repeat multiple times
+               // have a bunch of ifs to check which part of the alien is hit and if a base is detected more than once ignore a second hit
+               //
+               
+               //if the same base is called more than once ignore
+               
+               int landerId = landerHitDetection((int)cubex, (int)cubey, (int)cubez);
+
+               if( landerId != prevLanderId){
+                  prevLanderId = landerId;
+                  printf("Lander shot by Ray! Nice shot!\n\n\n");
+
+                  
+
+               
+                  //set human gravity back to 1 so it will fall can use the target to identify the human held by alien
+                  fodder[lander[landerId].targetID].gravity = 1;
+
+                  //if human is high enough from ground (10 units) set markedForDeath to 1 
+                  //create a while here that loops from the starting y to the ground and if the count is greater than 10 
+                  int fallHeight = 0;
+                  int curY = fodder[lander[landerId].targetID].feet.y;
+
+                  while( world[(int)fodder[lander[landerId].targetID].feet.x][curY-1][(int)fodder[lander[landerId].targetID].feet.z] == 0){
+                     fallHeight++;
+                     curY--;
+                  }
+
+                  if( fallHeight > 15 ){
+                     fodder[lander[landerId].targetID].markedForDeath = 1;
+                     
+                  }
+                  //printf("fall distance == %d\n\n", fallHeight);
+
+                  //set lander state to 3 return to searching height
+                  lander[landerId].state = 3;
+
+                  //unset target
+                  lander[landerId].target.x = 0;
+                  lander[landerId].target.y = 0;
+                  lander[landerId].target.z = 0;
+
+                  //remove lander
+                  lander[landerId].visible = 0;
+                  removeLander(lander[landerId].base.x, lander[landerId].base.y, lander[landerId].base.z);
+
                }
             }
          }  
@@ -482,6 +535,32 @@ void removeLander(int x, int y, int z){
 
       return;
 
+}
+
+/**
+ * returns the lander id  that the cube passed in is part of 
+ *  if 0 is returned an error has occured
+ */
+int landerHitDetection(int x, int y, int z){
+   int landerId = 0;
+   int loop = 1;
+
+   for(loop = 1; loop < ALIEN_COUNT; loop++){
+
+
+      if( (x <= lander[loop].base.x + 2)  && (x >= lander[loop].base.x - 2) ){
+         if( (z <= lander[loop].base.z + 2)  && (z >= lander[loop].base.z - 2) ){
+            if( (y <= lander[loop].base.y + 4) && (y >= lander[loop].base.y - 1) ){
+
+               landerId = loop;
+               break;
+
+            }
+         }
+      }
+   }
+
+   return landerId;
 }
 
 /**
@@ -692,6 +771,9 @@ void alienMovement(){
 
          removeHuman(fodder[ lander[loopAlien].targetID ].head.x, fodder[ lander[loopAlien].targetID ].head.y, fodder[ lander[loopAlien].targetID ].head.z);
          fodder[ lander[loopAlien].targetID ].head.y += 0.1;
+         fodder[ lander[loopAlien].targetID ].body.y += 0.1;
+         fodder[ lander[loopAlien].targetID ].feet.y += 0.1;
+
          drawHuman(fodder[ lander[loopAlien].targetID ].head.x, fodder[ lander[loopAlien].targetID ].head.y, fodder[ lander[loopAlien].targetID ].head.z);
    /************ state == 3 return to human searching altitude ************/
       }else if(lander[loopAlien].state == 3 && lander[loopAlien].visible == 1 ){
@@ -761,6 +843,7 @@ void alienMovement(){
          lander[loopAlien].base.y -= lander[loopAlien].vy;
          if(lander[loopAlien].vx == 0 && lander[loopAlien].vy == 0 && lander[loopAlien].vz == 0){
             lander[loopAlien].state = 2;
+            fodder[lander[loopAlien].targetID].gravity = 0;
          }
          
       }else if(lander[loopAlien].state == 2){
@@ -774,6 +857,9 @@ void alienMovement(){
          
       }else if(lander[loopAlien].state == 3){
          if(lander[loopAlien].searchingHeight <= lander[loopAlien].base.y){
+            lander[loopAlien].target.x = 0;
+            lander[loopAlien].target.y = 0;
+            lander[loopAlien].target.z = 0;
             
             lander[loopAlien].state = 0;
          //add new x,z velos to the lander
@@ -845,33 +931,42 @@ void humanGravity(){
    for( loop = 0; loop < BODY_COUNT; loop++){
       //x value will piggyback onto loop
 
-      if( world[ (int)fodder[loop].feet.x ][ (int)fodder[loop].feet.y-1  ][ (int)fodder[loop].feet.z  ] == 0  ){ //will fall if enter this loop
-         //update whole body in world and in fodder array
-         //update head
-         //fodder[loop].head.x = loop;
-         fodder[loop].head.y = fodder[loop].head.y - gravityRate;
-         //fodder[loop].head.z = random;
+      if( fodder[loop].gravity == 1){
 
-      //update body
-         //fodder[loop].head.x = loop;
-         fodder[loop].body.y = fodder[loop].body.y - gravityRate;
-         //fodder[loop].head.z = random;
+         if( world[ (int)fodder[loop].feet.x ][ (int)fodder[loop].feet.y-1  ][ (int)fodder[loop].feet.z  ] == 0  ){ //will fall if enter this loop
+            //update whole body in world and in fodder array
+            //update head
+            //fodder[loop].head.x = loop;
+            fodder[loop].head.y = fodder[loop].head.y - gravityRate;
+            //fodder[loop].head.z = random;
 
-      //update feet
-         //fodder[loop].head.x = loop;
-         fodder[loop].feet.y = fodder[loop].feet.y - gravityRate;
-         //fodder[loop].head.z = random;
+         //update body
+            //fodder[loop].head.x = loop;
+            fodder[loop].body.y = fodder[loop].body.y - gravityRate;
+            //fodder[loop].head.z = random;
 
-      //move humans in the world b\c of gravity
-         world[ (int)fodder[loop].feet.x ][ (int)fodder[loop].head.y ][ (int)fodder[loop].feet.z ] = 3;//head red
-         world[ (int)fodder[loop].feet.x ][ (int)fodder[loop].body.y ][ (int)fodder[loop].feet.z ] = 4;//body black
-         world[ (int)fodder[loop].feet.x ][ (int)fodder[loop].feet.y ][ (int)fodder[loop].feet.z ] = 7;//feet orange
-         
-         world[ (int)fodder[loop].feet.x ][ (int)fodder[loop].head.y+1 ][ (int)fodder[loop].feet.z ] = 0;//remove old head
+         //update feet
+            //fodder[loop].head.x = loop;
+            fodder[loop].feet.y = fodder[loop].feet.y - gravityRate;
+            //fodder[loop].head.z = random;
+
+         //move humans in the world b\c of gravity
+            world[ (int)fodder[loop].feet.x ][ (int)fodder[loop].head.y ][ (int)fodder[loop].feet.z ] = 3;//head red
+            world[ (int)fodder[loop].feet.x ][ (int)fodder[loop].body.y ][ (int)fodder[loop].feet.z ] = 4;//body black
+            world[ (int)fodder[loop].feet.x ][ (int)fodder[loop].feet.y ][ (int)fodder[loop].feet.z ] = 7;//feet orange
+            
+            world[ (int)fodder[loop].feet.x ][ (int)fodder[loop].head.y+1 ][ (int)fodder[loop].feet.z ] = 0;//remove old head
+         } else { //this will occur once a human has hit the ground
+            if(fodder[loop].markedForDeath == 1){
+               // remove from screen and make it invisible
+               if( fodder[loop].visible == 1){
+                  printf("Human died on impact with the ground\n");
+                  removeHuman(fodder[loop].head.x, fodder[loop].head.y, fodder[loop].head.z);
+                  fodder[loop].visible = 0;
+               }
+            }
+         }
       }
-      // if( world[ (int)fodder[loop].feet.x ][ (int)fodder[loop].feet.y-1  ][ (int)fodder[loop].feet.z  ] != 0  ){
-      //    printf("person %d, head :: x %d y %d z %d\n", loop, (int)fodder[loop].head.x, (int)fodder[loop].head.y, (int)fodder[loop].head.z );
-      // }
    }
 
    return;
@@ -1679,6 +1774,12 @@ int main(int argc, char** argv){
          }
       //make human visible
          fodder[loop].visible = 1;
+
+      //make human effected by gravity
+         fodder[loop].gravity = 1;
+
+      //make human not marked for death (killed on collision with ground) be default
+         fodder[loop].markedForDeath = 0;
 
       //make head
          fodder[loop].head.x = xVal;

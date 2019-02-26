@@ -233,7 +233,8 @@ DONE forgot to remove from map when not visible
 2. aliens searching DONE
 - search radius its like a cylinder
 
-*** i'll need to reset the target at some point
+*** i'll need to reset the target at some point DONE
+- reset when the lander first enters search state
 
 i changed aliens to update .25 instead of .1
 
@@ -242,11 +243,27 @@ i changed aliens to update .25 instead of .1
 
 4. grab human and fly away DONE
 - disappear with human when hit roof
+### current task below
+- add a flag to the human struct to control if gravity should effect it or not may help prevent the blinking
+- flag added to human gravity is set at initialization, and gravity turned off in the second check of alienMovement at the end of state == 1, the state is changed to 2 
 
-5. if shot when holding human drop it and return to searching height
+5. if shot when holding human drop it and DIE!!!!
+- will have to set gravity flag back to 1 to turn gravity back on
 
-6. if human drops from a certain height than human disappears when it hits the ground
 
+
+6. if human shot then alien returns to searching at search height and human disappears DONE
+
+7. if human drops from a certain height than human disappears when it hits the ground DONE
+
+LEFT TO DO
+is identify lander shot 
+prevent the same lander from being shot more than once per ray DONE
+
+
+
+NOTE
+if human shot there isn't a need to reset the gravity flag however if the alien is shot the flag will have to be reset
 
 
 
