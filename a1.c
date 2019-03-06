@@ -305,7 +305,7 @@ void fireTube(){
          }
          else{
             if(world[(int)cubex][(int)cubey][(int)cubez] == 3 || world[(int)cubex][(int)cubey][(int)cubez] == 4 || world[(int)cubex][(int)cubey][(int)cubez] == 7){
-               printf("Human shot by Ray!\n\n\n");
+               printf("Human shot by Ray!\n");
                prevX = (int)cubex;
                prevY = (int)cubey;
                prevZ = (int)cubez;
@@ -350,7 +350,7 @@ void fireTube(){
 
                if( landerId != prevLanderId){
                   prevLanderId = landerId;
-                  printf("Lander shot by Ray! Nice shot!\n\n\n");
+                  printf("Lander shot by Ray! Nice shot!\n");
 
                   
 
@@ -820,12 +820,12 @@ void alienMovement(){
       }else if(lander[loopAlien].state == 1){
          //update position toward human head and set velos to 0 once the head is reached
 
-         if( lander[loopAlien].base.x + lander[loopAlien].vx > 97 || lander[loopAlien].base.x + lander[loopAlien].vx < 2 ){
-            lander[loopAlien].vx *= -1;
-         }
-         if( lander[loopAlien].base.z + lander[loopAlien].vz > 97 || lander[loopAlien].base.z + lander[loopAlien].vz < 2 ){
-            lander[loopAlien].vz *= -1;
-         }
+         // if( lander[loopAlien].base.x + lander[loopAlien].vx > 97 || lander[loopAlien].base.x + lander[loopAlien].vx < 2 ){
+         //    lander[loopAlien].vx *= -1;
+         // }
+         // if( lander[loopAlien].base.z + lander[loopAlien].vz > 97 || lander[loopAlien].base.z + lander[loopAlien].vz < 2 ){
+         //    lander[loopAlien].vz *= -1;
+         // }
 
          // if( lander[loopAlien].base.x > lander[loopAlien].target.x){
          //    lander[loopAlien].base.x -= lander[loopAlien].vx;
@@ -960,7 +960,7 @@ void humanGravity(){
             if(fodder[loop].markedForDeath == 1){
                // remove from screen and make it invisible
                if( fodder[loop].visible == 1){
-                  printf("Human died on impact with the ground\n");
+                  printf("Human died on impact with the ground\n\n");
                   removeHuman(fodder[loop].head.x, fodder[loop].head.y, fodder[loop].head.z);
                   fodder[loop].visible = 0;
                }
