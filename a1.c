@@ -20,7 +20,7 @@ Assignment 1
 #include <time.h>
 
 #define BODY_COUNT 10
-#define ACCELERATION 100
+#define ACCELERATION 150
 #define TUBE_COUNT 10
 #define ALIEN_COUNT 5
 #define SONAR 10
@@ -1003,65 +1003,76 @@ void viewMomentum(){
    if(movement.x != x || movement.y != y || movement.z != z){
       if(x > movement.x){
          dmoveX = dPlus;
-         if(count == ACCELERATION){
-            ratioX = x - movement.x;
-         }
+         // if(count == ACCELERATION){
+         //    ratioX = x - movement.x;
+         // }
+         ratioX = x - movement.x;
       } else if(x == movement.x){
          dmoveX = 0;
          ratioX = 1;
       }else {
          dmoveX = dNeg;
-         if(count == ACCELERATION){
-            ratioX = movement.x - x;
-         }
+         // if(count == ACCELERATION){
+         //    ratioX = movement.x - x;
+         // }
+         ratioX = movement.x - x;
       }
       //x = x + check;
 
       if(y > movement.y){
          dmoveY = dPlus;
-         if(count == ACCELERATION){
-            ratioY = y - movement.y;
-         }
+         // if(count == ACCELERATION){
+         //    ratioY = y - movement.y;
+         // }
+         ratioY = y - movement.y;
       } else if(y == movement.y){
          dmoveY = 0;
          //ratioY = 1;
       } else {
          dmoveY = dNeg;
-         if(count == ACCELERATION){
-            ratioY = movement.y - y;
-         }
+         // if(count == ACCELERATION){
+         //    ratioY = movement.y - y;
+         // }
+         ratioY = movement.y - y;
          
       }
       //y = y + check;
 
       if(z > movement.z){
          dmoveZ = dPlus;
-         if(count == ACCELERATION){
-            ratioZ = z - movement.z;
-         }
+         // if(count == ACCELERATION){
+         //    ratioZ = z - movement.z;
+         // }
+         ratioZ = z - movement.z;
       } else if(z == movement.z){
          dmoveZ = 0;
          ratioZ = 1;
       } else {
          dmoveZ = dNeg;
-         if(count == ACCELERATION){
-            ratioZ = movement.z - z;
-         }
+         // if(count == ACCELERATION){
+         //    ratioZ = movement.z - z;
+         // }
+         ratioZ = movement.z - z;
       }
       //z = z + check;
-      count--;
+      //count--;
 
    }
 
-   if(count != ACCELERATION){
+   if(1){//count != ACCELERATION){
       setOldViewPosition( x, y, z);
       oldX = x;
       oldY = y;
       oldZ = z;
 
-      accX = ((dmoveX * (count/20)) * ratioX);
-      accY = ((dmoveY * (count/20)) * ratioY);
-      accZ = ((dmoveZ * (count/20)) * ratioZ);
+      //int tempCount = count;
+      if(count >= ACCELERATION){
+         count = ACCELERATION;
+      }
+
+      accX = ((dmoveX * (count/10)) * ratioX);
+      accY = ((dmoveY * (count/10)) * ratioY);
+      accZ = ((dmoveZ * (count/10)) * ratioZ);
 
       if( (accX) > maxV ){
          accX = maxV;
@@ -1094,9 +1105,15 @@ void viewMomentum(){
       movement.z = z;
       
       collisionResponse();
-      count--;
+      if(count > 100){
+         count = count -2;
+      }
+      else if(count > 0){
+         count--;
+      }
+      
       if(count == 0){
-         count = ACCELERATION;
+         //count = ACCELERATION;
          movement.x = x;
          movement.y = y;
          movement.z = z;
@@ -1105,7 +1122,7 @@ void viewMomentum(){
 
    }
 
-
+   //printf("count = %d\n", count);
    return;
 }
 
@@ -1114,7 +1131,7 @@ void removeRayLoop(){
    for(rayLoop=0; rayLoop < TUBE_COUNT; rayLoop++){
       if(tubeVisible[rayLoop] == 1){
          ftime(&shotClock);
-         if(myRays[rayLoop].shotAt.time < shotClock.time - 5){
+         if(myRays[rayLoop].shotAt.time < shotClock.time - 2){
             tubeVisible[rayLoop] = 0;
          }
       }      

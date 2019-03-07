@@ -777,7 +777,7 @@ static int lighton = 1;
          if (flycontrol == 1)
             vpy += sin(rotx) * speed;          ///original value is 0.3
          vpz += cos(roty) * speed;
-         count = ACCELERATION;
+         count+=10; //= ACCELERATION;
 
          //create a global counter that builds up a momentum counter then once w and the others have been let go a check will occur for the momentum at the end of the switch case //note
 	 collisionResponse();
@@ -794,7 +794,7 @@ static int lighton = 1;
          if (flycontrol == 1)
             vpy -= sin(rotx) * speed;
          vpz -= cos(roty) * speed;
-         count = ACCELERATION;
+         count+= 10; // = ACCELERATION;
 	 collisionResponse();
          glutPostRedisplay();
          break;
@@ -805,7 +805,7 @@ static int lighton = 1;
          roty = (mvy / 180.0 * 3.141592);
          vpx += cos(roty) * speed;
          vpz += sin(roty) * speed;
-         count = ACCELERATION;
+         count+=10; // = ACCELERATION;
 	 collisionResponse();
          glutPostRedisplay();
          break;
@@ -816,7 +816,7 @@ static int lighton = 1;
          roty = (mvy / 180.0 * 3.141592);
          vpx -= cos(roty) * speed;
          vpz -= sin(roty) * speed;
-         count = ACCELERATION;
+         count+=10; // = ACCELERATION;
 	 collisionResponse();
          glutPostRedisplay();
          break;
