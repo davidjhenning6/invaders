@@ -23,7 +23,7 @@ Assignment 1
 #define ACCELERATION 150
 #define TUBE_COUNT 10
 #define ALIEN_COUNT 5
-#define SONAR 10
+#define SONAR 15
 
 #include "graphics.h"
 
