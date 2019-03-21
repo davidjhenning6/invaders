@@ -281,3 +281,37 @@ must add an visible value to human to control if they are shown on the map or no
 //redundent here since it doesn't exist anymore but will be needed when the alien is the thing shot
 
 
+### Assignment 4 ###
+
+##FIXED:: Error found shooting a purple alien has them drop a human that doens't die
+
+for stall
+i could add what would essentially be an extra state to prevent the alien from doing any of the main state
+and have the stall state decrement every time its entered and then when the state is exited the alien will just continue on with what ever state it was currently in
+    an if else infront of the first loop
+the stallingVY value should only be used for a collision with the ground i think
+
+1. alien on alien collision must effect any alien at any time no matter what state they are in
+    - aliens searching can just bounce
+    - aliens abducting human must go back to moving straight up after being hit by another alien
+    - aliens moving towards a human must move away from alien that hit them and then recalculate their route towards their target human
+        - could have a stall value and have the **stall** counter drop every iteration through update
+
+
+2. collisions between alien and the ground
+    - if an alien hits the ground on its way towards a human //this is probably the only time an alien will colide with the ground
+        the alien must stop before the ground 
+        move up and back away from the ground for a short amount of time // i could use the **stall** counter that i will have to use for more advanced alien on alien collision
+    - once an alien has stopped moving back from the ground i will have to recalculate the vector to the target human
+
+3. aliens in attack mode
+    - aliens will have a new state machine
+        - follow
+        - target acquired -- stall
+            - if an alien is paused and waiting to shoot they should still react to collision as it will probably happen frequently when multiple aliens are giving chase 
+        - shoot
+    - aliens will still have to check collisions with each other
+    - aliens will follow the player around trying to shoot them
+        - alien will follow till with in range of player // range will be a variable
+        - once within range alien will stop moving get the players location and theirs 
+        - alien will fire a ray using their location and their player-target-location // ray could go past the player location a bit

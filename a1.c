@@ -2,7 +2,7 @@
 Dave Henning
 0921760
 cis4820
-Assignment 1
+Assignment 1-4
 ***************/
 
 /* Derived from scene.c in the The OpenGL Programming Guide */
@@ -21,15 +21,18 @@ Assignment 1
 
 #define BODY_COUNT 10
 #define ACCELERATION 150
-#define TUBE_COUNT 10
+#define TUBE_COUNT 20 //3 is red for aliens and 2 is purple for humans
 #define ALIEN_COUNT 5
-#define SONAR 15
+#define SONAR 30
+#define GUNSONAR 25
 
 #include "graphics.h"
 
 extern GLubyte  world[WORLDX][WORLDY][WORLDZ];
 extern float tubeData[TUBE_COUNT][6];
 extern short tubeVisible[TUBE_COUNT];
+int tubeColour[TUBE_COUNT];
+//int playerHealth = 5;
 
 
 	/* mouse function called by GLUT when a button is pressed or released */
@@ -150,6 +153,9 @@ typedef struct Alien{
    float vy;
    int state; // has 4 states 0 -> 3    0 is searching, 1 is moving to human, 2 is carry human straight up, 3 rise back to searching height
    int searchingHeight; // each alien will have a randomized height between a certain range
+   int type; // attacking=6 or searching/abducting=1
+   int stall; //used to handle aliens shooting player
+   xyz playerLoc; // used to shoot player after stall
 }alien;
 
 typedef struct Humans{
@@ -202,7 +208,7 @@ typedef struct RayShot{
 }expire;
 expire myRays[TUBE_COUNT];
 
-void drawLander(int, int, int);
+void drawLander(int, int, int, int);
 void removeLander(int, int, int);
 int landerHitDetection(int, int, int);
 void drawHuman(int x, int y, int z);
@@ -212,6 +218,8 @@ void humanGravity();
 void viewMomentum();
 void collisionResponse();
 void removeRayLoop();
+
+void fireAlienRay(int);
 
 
 
@@ -278,6 +286,7 @@ void fireTube(){
    //printf("end :: x %lf y %lf z %lf \n", ax, ay+0.4, az);
 
    createTube(rayCount, x, y, z, vectx, vecty, vectz, 2);
+   tubeColour[rayCount] = 2;
    // y -= 0.1;
    // ay -= 0.1;
    prevX = -1;
@@ -339,7 +348,7 @@ void fireTube(){
                      break;
                   }
                }
-            } else if(world[(int)cubex][(int)cubey][(int)cubez] == 1 || world[(int)cubex][(int)cubey][(int)cubez] == 12){ //detect alien hit by ray look for colours 1 & 12
+            } else if(world[(int)cubex][(int)cubey][(int)cubez] == 1 || world[(int)cubex][(int)cubey][(int)cubez] == 12 || world[(int)cubex][(int)cubey][(int)cubez] == 6){ //detect alien hit by ray look for colours 1 & 12 & 6 6 = attacking
                //alien body and eyes will have to figure out alien body detection so alert doesn't repeat multiple times
                // have a bunch of ifs to check which part of the alien is hit and if a base is detected more than once ignore a second hit
                //
@@ -356,31 +365,35 @@ void fireTube(){
 
                
                   //set human gravity back to 1 so it will fall can use the target to identify the human held by alien
-                  fodder[lander[landerId].targetID].gravity = 1;
+                  if(lander[landerId].type == 1){
+                     fodder[lander[landerId].targetID].gravity = 1;
 
-                  //if human is high enough from ground (10 units) set markedForDeath to 1 
-                  //create a while here that loops from the starting y to the ground and if the count is greater than 10 
-                  int fallHeight = 0;
-                  int curY = fodder[lander[landerId].targetID].feet.y;
+                     //if human is high enough from ground (10 units) set markedForDeath to 1 
+                     //create a while here that loops from the starting y to the ground and if the count is greater than 10 
+                     int fallHeight = 0;
+                     int curY = fodder[lander[landerId].targetID].feet.y;
 
-                  while( world[(int)fodder[lander[landerId].targetID].feet.x][curY-1][(int)fodder[lander[landerId].targetID].feet.z] == 0){
-                     fallHeight++;
-                     curY--;
+                     while( world[(int)fodder[lander[landerId].targetID].feet.x][curY-1][(int)fodder[lander[landerId].targetID].feet.z] == 0){
+                        fallHeight++;
+                        curY--;
+                     }
+
+                     if( fallHeight > 15 ){
+                        fodder[lander[landerId].targetID].markedForDeath = 1;
+                        
+                     }
+                     //printf("fall distance == %d\n\n", fallHeight);
+
+                     //set lander state to 3 return to searching height
+                     lander[landerId].state = 3;
+
+                     //unset target
+                     lander[landerId].target.x = 0;
+                     lander[landerId].target.y = 0;
+                     lander[landerId].target.z = 0;
                   }
 
-                  if( fallHeight > 15 ){
-                     fodder[lander[landerId].targetID].markedForDeath = 1;
-                     
-                  }
-                  //printf("fall distance == %d\n\n", fallHeight);
-
-                  //set lander state to 3 return to searching height
-                  lander[landerId].state = 3;
-
-                  //unset target
-                  lander[landerId].target.x = 0;
-                  lander[landerId].target.y = 0;
-                  lander[landerId].target.z = 0;
+                  
 
                   //remove lander
                   lander[landerId].visible = 0;
@@ -388,6 +401,8 @@ void fireTube(){
 
                }
             }
+
+
          }  
       }
    }
@@ -401,12 +416,49 @@ void fireTube(){
    return;
 }
 
+//alien shooting human
+//id passed in is the id of the lander currently shooting
+void fireAlienRay(int id){
+
+   // lander[id].playerLoc.x;
+   // lander[id].playerLoc.y;
+   // lander[id].playerLoc.z;
+
+   // lander[id].base.x;
+   // lander[id].base.y;
+   // lander[id].base.z;
+   float x, y, z;
+   getViewPosition(&x, &y, &z);
+   x *= -1;
+   y *= -1;
+   z *= -1;
+
+   createTube(rayCount, lander[id].base.x, lander[id].base.y, lander[id].base.z, lander[id].playerLoc.x, lander[id].playerLoc.y, lander[id].playerLoc.z, 3);
+   if(lander[id].playerLoc.x >= x - 0.5 && lander[id].playerLoc.x <= x + 0.5 ){
+      if(lander[id].playerLoc.y >= y - 0.5 && lander[id].playerLoc.y <= y + 0.5 ){
+         if(lander[id].playerLoc.z >= z - 0.5 && lander[id].playerLoc.z <= z + 0.5 ){
+            printf("Player hit by Alien Ray\n");
+         }
+      }
+   }
+   tubeColour[rayCount] = 3;
+   ftime(&myRays[rayCount].shotAt);
+   //createTube(1, x, y, 20, 60, 20, 60, 2);
+   rayCount++;
+   if(rayCount == TUBE_COUNT){
+      rayCount = 0;
+   }
+
+
+   return;
+}
+
 /**
  * draws the lander alien the coordinates it recieves are the base of the stem of the lander
  * the coordinates must be within the range:: for x & z from 2 -> 97, for y from 1 -> 45
  * the values scanned in are checked at the beginning 
 */
-void drawLander(int x, int y, int z){
+void drawLander(int x, int y, int z, int type){
 
    //treat 50 25 50 as x,y,z recieved in function
 
@@ -432,40 +484,40 @@ void drawLander(int x, int y, int z){
       int alienZ = z;
 
       //stem of alien starting at base
-      world[alienX][alienY][alienZ] = 1;
-      world[alienX][alienY+1][alienZ] = 1;
-      world[alienX][alienY+2][alienZ] = 1;
-      world[alienX][alienY+3][alienZ] = 1;
-      world[alienX][alienY+4][alienZ] = 1;
+      world[alienX][alienY][alienZ] = type;
+      world[alienX][alienY+1][alienZ] = type;
+      world[alienX][alienY+2][alienZ] = type;
+      world[alienX][alienY+3][alienZ] = type;
+      world[alienX][alienY+4][alienZ] = type;
 
       //4 legs of alien
-      world[alienX-1][alienY][alienZ] = 1;
-      world[alienX-2][alienY-1][alienZ] = 1;
+      world[alienX-1][alienY][alienZ] = type;
+      world[alienX-2][alienY-1][alienZ] = type;
 
-      world[alienX+1][alienY][alienZ] = 1;
-      world[alienX+2][alienY-1][alienZ] = 1;
+      world[alienX+1][alienY][alienZ] = type;
+      world[alienX+2][alienY-1][alienZ] = type;
 
-      world[alienX][alienY][alienZ-1] = 1;
-      world[alienX][alienY-1][alienZ-2] = 1;
+      world[alienX][alienY][alienZ-1] = type;
+      world[alienX][alienY-1][alienZ-2] = type;
 
-      world[alienX][alienY][alienZ+1] = 1;
-      world[alienX][alienY-1][alienZ+2] = 1;
+      world[alienX][alienY][alienZ+1] = type;
+      world[alienX][alienY-1][alienZ+2] = type;
 
       //head of alien
       //layer 1
-      world[alienX+1][alienY+2][alienZ] = 1;
-      world[alienX-1][alienY+2][alienZ] = 1;
-      world[alienX][alienY+2][alienZ+1] = 1;
-      world[alienX][alienY+2][alienZ-1] = 1;
+      world[alienX+1][alienY+2][alienZ] = type;
+      world[alienX-1][alienY+2][alienZ] = type;
+      world[alienX][alienY+2][alienZ+1] = type;
+      world[alienX][alienY+2][alienZ-1] = type;
       //layer 2
-      world[alienX+1][alienY+3][alienZ] = 1;
-      world[alienX-1][alienY+3][alienZ] = 1;
-      world[alienX][alienY+3][alienZ+1] = 1;
-      world[alienX][alienY+3][alienZ-1] = 1;
-      world[alienX+2][alienY+3][alienZ] = 1;
-      world[alienX-2][alienY+3][alienZ] = 1;
-      world[alienX][alienY+3][alienZ+2] = 1;
-      world[alienX][alienY+3][alienZ-2] = 1;
+      world[alienX+1][alienY+3][alienZ] = type;
+      world[alienX-1][alienY+3][alienZ] = type;
+      world[alienX][alienY+3][alienZ+1] = type;
+      world[alienX][alienY+3][alienZ-1] = type;
+      world[alienX+2][alienY+3][alienZ] = type;
+      world[alienX-2][alienY+3][alienZ] = type;
+      world[alienX][alienY+3][alienZ+2] = type;
+      world[alienX][alienY+3][alienZ-2] = type;
       //eyes
       world[alienX+1][alienY+3][alienZ-1] = 12;
       world[alienX+1][alienY+3][alienZ+1] = 12;
@@ -473,10 +525,10 @@ void drawLander(int x, int y, int z){
       world[alienX-1][alienY+3][alienZ-1] = 12;
 
       //layer 3
-      world[alienX+1][alienY+4][alienZ] = 1;
-      world[alienX-1][alienY+4][alienZ] = 1;
-      world[alienX][alienY+4][alienZ+1] = 1;
-      world[alienX][alienY+4][alienZ-1] = 1;
+      world[alienX+1][alienY+4][alienZ] = type;
+      world[alienX-1][alienY+4][alienZ] = type;
+      world[alienX][alienY+4][alienZ+1] = type;
+      world[alienX][alienY+4][alienZ-1] = type;
 
    return;
 }
@@ -550,7 +602,7 @@ int landerHitDetection(int x, int y, int z){
 
       if( (x <= lander[loop].base.x + 2)  && (x >= lander[loop].base.x - 2) ){
          if( (z <= lander[loop].base.z + 2)  && (z >= lander[loop].base.z - 2) ){
-            if( (y <= lander[loop].base.y + 4) && (y >= lander[loop].base.y - 1) ){
+            if( (y <= lander[loop].base.y + 4) && (y > lander[loop].base.y - 2) ){
 
                landerId = loop;
                break;
@@ -612,63 +664,98 @@ void alienMovement(){
          //printf("%d\n", loopAlien);
          //removeLander((int)lander[loopAlien].base.x, (int)lander[loopAlien].base.y, (int)lander[loopAlien].base.z);
 
-         
-         //check if lander[loopAlien] needs to bouce off another lander
-         for(aaCollision=1; aaCollision<ALIEN_COUNT; aaCollision++){ //check location of the other landers loop through the other landers
-            //check if aa collision doesn't equal loopAlien so you don't compare position too itself
-            if(aaCollision != loopAlien){
-               //check if the landers are on the same height ::check if the y values are within 5 of each other
-               if( (lander[loopAlien].base.y < lander[aaCollision].base.y + 5 && lander[loopAlien].base.y >= lander[aaCollision].base.y ) || (lander[aaCollision].base.y < lander[loopAlien].base.y + 5 && lander[aaCollision].base.y >= lander[loopAlien].base.y ) ){ 
-                  //check if landers are within x +-5 and z+-5 of eachother
-                  if( (lander[aaCollision].base.x <= lander[loopAlien].base.x+5 && lander[aaCollision].base.x >= lander[loopAlien].base.x) || (lander[aaCollision].base.x >= lander[loopAlien].base.x-5 && lander[aaCollision].base.x <= lander[loopAlien].base.x) ){
-                     //check for z like above
-                     if( (lander[aaCollision].base.z <= lander[loopAlien].base.z+5 && lander[aaCollision].base.z >= lander[loopAlien].base.z) || (lander[aaCollision].base.z >= lander[loopAlien].base.z-5 && lander[aaCollision].base.z <= lander[loopAlien].base.z) ){
-                        //A collision has occured!!!! flip velos of 
-         
-                        /*FIXED::  this doesn't work because i have a perminent flip so when the check comes around for the othe rguy in search
-                           *          it will give the wrong result
-                           *          store a local var and store it it can be an array of some kind perhaps n*2 and (n*2)+1 for x and z
-                           *          then outside this for loop loopn once again and each iteration check if the alien is in a search state 
-                           *          before adjusting the velos
-                           */
+         if(lander[loopAlien].type == 1 || lander[loopAlien].type == 6){
 
-                           /**
-                           * FIXED::
-                           * add more checks if theres a collision
-                           * 
-                           * if collision and aliens are going the same way (only needs to be along one axis can still bounce off on the other)
-                           * just swap the velos on the axis where both are going the same direction if one behind is faster than the one in front
-                           * only change if ine will over take the other
-                           * 
-                           * 
-                        **/
-                        //check x velos
-                        if(lander[aaCollision].vx < 0 && lander[loopAlien].vx > 0){
-                           tempVelo[loopAlien*2] = -1;
+               //check if lander[loopAlien] needs to bouce off another lander
+            for(aaCollision=1; aaCollision<ALIEN_COUNT; aaCollision++){ //check location of the other landers loop through the other landers
+               //check if aa collision doesn't equal loopAlien so you don't compare position too itself
+               if(aaCollision != loopAlien){
+                  //check if the landers are on the same height ::check if the y values are within 5 of each other
+                  if( (lander[loopAlien].base.y < lander[aaCollision].base.y + 5 && lander[loopAlien].base.y >= lander[aaCollision].base.y ) || (lander[aaCollision].base.y < lander[loopAlien].base.y + 5 && lander[aaCollision].base.y >= lander[loopAlien].base.y ) ){ 
+                     //check if landers are within x +-5 and z+-5 of eachother
+                     if( (lander[aaCollision].base.x <= lander[loopAlien].base.x+5 && lander[aaCollision].base.x >= lander[loopAlien].base.x) || (lander[aaCollision].base.x >= lander[loopAlien].base.x-5 && lander[aaCollision].base.x <= lander[loopAlien].base.x) ){
+                        //check for z like above
+                        if( (lander[aaCollision].base.z <= lander[loopAlien].base.z+5 && lander[aaCollision].base.z >= lander[loopAlien].base.z) || (lander[aaCollision].base.z >= lander[loopAlien].base.z-5 && lander[aaCollision].base.z <= lander[loopAlien].base.z) ){
+                           //A collision has occured!!!! flip velos of 
+            
+                           /*FIXED::  this doesn't work because i have a perminent flip so when the check comes around for the othe rguy in search
+                              *          it will give the wrong result
+                              *          store a local var and store it it can be an array of some kind perhaps n*2 and (n*2)+1 for x and z
+                              *          then outside this for loop loopn once again and each iteration check if the alien is in a search state 
+                              *          before adjusting the velos
+                              */
 
-                        }else if(lander[aaCollision].vx > 0 && lander[loopAlien].vx < 0){
-                           tempVelo[loopAlien*2] = -1;
-                        }else if(lander[aaCollision].vx > 0 && lander[loopAlien].vx > 0){
-                           tempMagnitude[loopAlien*2] = lander[aaCollision].vx;
-                        }else if(lander[aaCollision].vx < 0 && lander[loopAlien].vx < 0){
-                           tempMagnitude[loopAlien*2] = lander[aaCollision].vx;
-                        }
-                        //check z velos
-                        if(lander[aaCollision].vz < 0 && lander[loopAlien].vz > 0){
-                           tempVelo[loopAlien*2+1] = -1;
-                        }else if(lander[aaCollision].vz > 0 && lander[loopAlien].vz < 0){
-                           tempVelo[loopAlien*2+1] = -1;
-                        }else if(lander[aaCollision].vz > 0 && lander[loopAlien].vz > 0){
-                           tempMagnitude[loopAlien*2+1] = lander[aaCollision].vz;
-                        }else if(lander[aaCollision].vz < 0 && lander[loopAlien].vz < 0){
-                           tempMagnitude[loopAlien*2+1] = lander[aaCollision].vz;
+                              /**
+                              * FIXED::
+                              * add more checks if theres a collision
+                              * 
+                              * if collision and aliens are going the same way (only needs to be along one axis can still bounce off on the other)
+                              * just swap the velos on the axis where both are going the same direction if one behind is faster than the one in front
+                              * only change if ine will over take the other
+                              * 
+                              * 
+                           **/
+                           //check x velos
+                           if(lander[aaCollision].vx < 0 && lander[loopAlien].vx > 0){
+                              tempVelo[loopAlien*2] = -1;
+
+                           }else if(lander[aaCollision].vx > 0 && lander[loopAlien].vx < 0){
+                              tempVelo[loopAlien*2] = -1;
+                           }else if(lander[aaCollision].vx > 0 && lander[loopAlien].vx > 0){
+                              tempMagnitude[loopAlien*2] = lander[aaCollision].vx;
+                           }else if(lander[aaCollision].vx < 0 && lander[loopAlien].vx < 0){
+                              tempMagnitude[loopAlien*2] = lander[aaCollision].vx;
+                           }
+                           //check z velos
+                           if(lander[aaCollision].vz < 0 && lander[loopAlien].vz > 0){
+                              tempVelo[loopAlien*2+1] = -1;
+                           }else if(lander[aaCollision].vz > 0 && lander[loopAlien].vz < 0){
+                              tempVelo[loopAlien*2+1] = -1;
+                           }else if(lander[aaCollision].vz > 0 && lander[loopAlien].vz > 0){
+                              tempMagnitude[loopAlien*2+1] = lander[aaCollision].vz;
+                           }else if(lander[aaCollision].vz < 0 && lander[loopAlien].vz < 0){
+                              tempMagnitude[loopAlien*2+1] = lander[aaCollision].vz;
+                           }
                         }
                      }
                   }
                }
             }
+      //end of multi movement for state 0
+
          }
 
+         //scanning for aliens of type 6
+         if(lander[loopAlien].type == 6){
+            //get player location
+            float ppX;
+            float ppZ;
+            float ppY;
+            getViewPosition(&ppX, &ppY, &ppZ);
+            //printf("player position: x %lf y %lf z %lf \n", ppX, ppY, ppZ);
+            ppX *= -1;
+            ppY *= -1;
+            ppZ *= -1;
+            // world[(int)ppX][(int)ppY][(int)ppZ] = 1;
+
+            //check if player in range
+            if(lander[loopAlien].base.x - ppX <= GUNSONAR && lander[loopAlien].base.x - ppX >= -GUNSONAR){
+               if(lander[loopAlien].base.z - ppZ <= GUNSONAR && lander[loopAlien].base.z - ppZ >= -GUNSONAR){
+                  float distance = 0.0;
+                  distance = sqrt( pow(lander[loopAlien].base.x - ppX, 2) + pow( lander[loopAlien].base.z - ppZ, 2) );
+                  if(distance <= GUNSONAR && lander[loopAlien].stall <= -20){
+                        //if player in range set a stall value and get the players location
+                        lander[loopAlien].stall = 10;
+                        lander[loopAlien].playerLoc.x = ppX;
+                        lander[loopAlien].playerLoc.y = ppY;
+                        lander[loopAlien].playerLoc.z = ppZ;
+                  }
+               }
+            }
+         }
+
+
+         //scanning for aliens of type 1
          /**
              * check if a human is in range ** 
              * of the alien set the xyz velos they will be updated in the movement loop outside of this loop
@@ -690,60 +777,65 @@ void alienMovement(){
              * 
           **/
 
-         for(humanLoop = 0; humanLoop < BODY_COUNT; humanLoop++){
-            //check if these are within the radius 
-            //then take y of the head +1 and make a beeline
-            if( lander[loopAlien].base.x - fodder[humanLoop].head.x <= SONAR && lander[loopAlien].base.x - fodder[humanLoop].head.x >= -SONAR && fodder[humanLoop].visible == 1){
-               if( lander[loopAlien].base.z - fodder[humanLoop].head.z <= SONAR && lander[loopAlien].base.z - fodder[humanLoop].head.z >= -SONAR && fodder[humanLoop].visible == 1){
-               
-                  float distance = 0.0;
-                  distance = sqrt( pow(lander[loopAlien].base.x - fodder[humanLoop].head.x, 2) + pow( lander[loopAlien].base.z - fodder[humanLoop].head.z, 2) );
-                  if(distance <= SONAR){
+         if(lander[loopAlien].type == 1){
+            for(humanLoop = 0; humanLoop < BODY_COUNT; humanLoop++){
+               //check if these are within the radius 
+               //then take y of the head +1 and make a beeline
+               if( lander[loopAlien].base.x - fodder[humanLoop].head.x <= SONAR && lander[loopAlien].base.x - fodder[humanLoop].head.x >= -SONAR && fodder[humanLoop].visible == 1){
+                  if( lander[loopAlien].base.z - fodder[humanLoop].head.z <= SONAR && lander[loopAlien].base.z - fodder[humanLoop].head.z >= -SONAR && fodder[humanLoop].visible == 1){
+                  
+                     float distance = 0.0;
+                     distance = sqrt( pow(lander[loopAlien].base.x - fodder[humanLoop].head.x, 2) + pow( lander[loopAlien].base.z - fodder[humanLoop].head.z, 2) );
+                     if(distance <= SONAR){
 
-                  //loop through checking what all the landers targets are
-                     for(targetCollision=1; targetCollision<ALIEN_COUNT; targetCollision++){
-                        if( lander[targetCollision].target.x == fodder[humanLoop].head.x && lander[targetCollision].target.z == fodder[humanLoop].head.z ){
-                           notTarget++;
-                        }
-                     }
-                  //if no target collisions are found set target and switch to beeline
-                     if(notTarget==0){
-                        lander[loopAlien].target.x = fodder[humanLoop].head.x;
-                        lander[loopAlien].target.z = fodder[humanLoop].head.z;
-                        lander[loopAlien].target.y = (fodder[humanLoop].head.y)+1;
-
-                        //set targetiD for alien 
-                        //targetID is the array position of the human in fodder
-                        int findID;
-                        for(findID = 0; findID < BODY_COUNT; findID++){
-                           if( fodder[findID].head.x == lander[loopAlien].target.x && fodder[findID].head.z == lander[loopAlien].target.z ){
-                              lander[loopAlien].targetID = findID;
-                              break;
+                     //loop through checking what all the landers targets are
+                        for(targetCollision=1; targetCollision<ALIEN_COUNT; targetCollision++){
+                           if( lander[targetCollision].target.x == fodder[humanLoop].head.x && lander[targetCollision].target.z == fodder[humanLoop].head.z ){
+                              notTarget++;
                            }
                         }
+                     //if no target collisions are found set target and switch to beeline
+                        if(notTarget==0){
+                           lander[loopAlien].target.x = fodder[humanLoop].head.x;
+                           lander[loopAlien].target.z = fodder[humanLoop].head.z;
+                           lander[loopAlien].target.y = (fodder[humanLoop].head.y)+1;
 
-                        lander[loopAlien].state = 1;
+                           //set targetiD for alien 
+                           //targetID is the array position of the human in fodder
+                           int findID;
+                           for(findID = 0; findID < BODY_COUNT; findID++){
+                              if( fodder[findID].head.x == lander[loopAlien].target.x && fodder[findID].head.z == lander[loopAlien].target.z ){
+                                 lander[loopAlien].targetID = findID;
+                                 break;
+                              }
+                           }
 
-                        //set new velos 
-                        lander[loopAlien].vx = (lander[loopAlien].base.x - lander[loopAlien].target.x) /100;
-                        lander[loopAlien].vy = (lander[loopAlien].base.y - lander[loopAlien].target.y) /100;
-                        lander[loopAlien].vz = (lander[loopAlien].base.z - lander[loopAlien].target.z) /100;
+                           lander[loopAlien].state = 1;
 
+                           //set new velos 
+                           lander[loopAlien].vx = (lander[loopAlien].base.x - lander[loopAlien].target.x) /100;
+                           lander[loopAlien].vy = (lander[loopAlien].base.y - lander[loopAlien].target.y) /100;
+                           lander[loopAlien].vz = (lander[loopAlien].base.z - lander[loopAlien].target.z) /100;
+
+
+                        }
+                        
+
+
+                        //loop here to check if any other alien has this target and if it does set target values back to 0 and set state back to search
+
+                              
 
                      }
-                     
-
-
-                     //loop here to check if any other alien has this target and if it does set target values back to 0 and set state back to search
-
-                           
-
                   }
                }
+
+
             }
 
-
          }
+
+         
          
    /************ state == 1 bee line to human head ************/
       }else if(lander[loopAlien].state == 1 && lander[loopAlien].visible == 1 ){
@@ -795,30 +887,46 @@ void alienMovement(){
    /************ this loop sets the new position and draws the lander in everything before this should only change the velos! ************/
    for(loopAlien=1; loopAlien<ALIEN_COUNT; loopAlien++){
       if(lander[loopAlien].state == 0){
-         //magnitude
-         //magnitude is used when 2 aliens swap velocities as one catches up to another so it must be equals not anything else
-         lander[loopAlien].vx = tempMagnitude[2*loopAlien];
-         lander[loopAlien].vz = tempMagnitude[2*loopAlien+1];
+         if(lander[loopAlien].stall <= 0){
+            //magnitude
+            //magnitude is used when 2 aliens swap velocities as one catches up to another so it must be equals not anything else
+            lander[loopAlien].vx = tempMagnitude[2*loopAlien];
+            lander[loopAlien].vz = tempMagnitude[2*loopAlien+1];
 
 
-         //direction
-         //velo is used when 2 run into eachother and the velocity is multiplied by -1 or 1
-         lander[loopAlien].vx *= tempVelo[2*loopAlien];
-         lander[loopAlien].vz *= tempVelo[2*loopAlien+1];
-         //this should be the last thing done before updating as if it does not have the highest prioity it will cause a bus error
-         //check if it needs to bouce off an edge
-         if( lander[loopAlien].base.x + lander[loopAlien].vx > 97 || lander[loopAlien].base.x + lander[loopAlien].vx < 2 ){
-            lander[loopAlien].vx *= -1;
+            //direction
+            //velo is used when 2 run into eachother and the velocity is multiplied by -1 or 1
+            lander[loopAlien].vx *= tempVelo[2*loopAlien];
+            lander[loopAlien].vz *= tempVelo[2*loopAlien+1];
+            //this should be the last thing done before updating as if it does not have the highest prioity it will cause a bus error
+            //check if it needs to bouce off an edge
+            if( lander[loopAlien].base.x + lander[loopAlien].vx > 97 || lander[loopAlien].base.x + lander[loopAlien].vx < 2 ){
+               lander[loopAlien].vx *= -1;
+            }
+            if( lander[loopAlien].base.z + lander[loopAlien].vz > 97 || lander[loopAlien].base.z + lander[loopAlien].vz < 2 ){
+               lander[loopAlien].vz *= -1;
+            }
+
+            lander[loopAlien].base.x += lander[loopAlien].vx;
+            lander[loopAlien].base.z += lander[loopAlien].vz;
+            lander[loopAlien].stall--;
+         }else if(lander[loopAlien].stall == 1){
+               //once stall has been decremented shoot
+               //shoot on 1 and then decrement to decrease code size logic will be odd
+
+               fireAlienRay(loopAlien);
+
+               
+               //will won't to reset the speed of the stopped alien 
+               lander[loopAlien].stall--;
+         }else{
+            lander[loopAlien].stall--;
+
          }
-         if( lander[loopAlien].base.z + lander[loopAlien].vz > 97 || lander[loopAlien].base.z + lander[loopAlien].vz < 2 ){
-            lander[loopAlien].vz *= -1;
-         }
-
-         lander[loopAlien].base.x += lander[loopAlien].vx;
-         lander[loopAlien].base.z += lander[loopAlien].vz;
+         
       
       }else if(lander[loopAlien].state == 1){
-         //update position toward human head and set velos to 0 once the head is reached
+      //update position toward human head and set velos to 0 once the head is reached
 
          // if( lander[loopAlien].base.x + lander[loopAlien].vx > 97 || lander[loopAlien].base.x + lander[loopAlien].vx < 2 ){
          //    lander[loopAlien].vx *= -1;
@@ -838,17 +946,119 @@ void alienMovement(){
          // }else{
          //    lander[loopAlien].base.z += lander[loopAlien].vz;
          // }
-         lander[loopAlien].base.x -= lander[loopAlien].vx;
-         lander[loopAlien].base.z -= lander[loopAlien].vz;
-         lander[loopAlien].base.y -= lander[loopAlien].vy;
-         if(lander[loopAlien].vx == 0 && lander[loopAlien].vy == 0 && lander[loopAlien].vz == 0){
+
+      //any of the following will send an alien into the ground set his stall to 10 and change its velos
+         float groundX = lander[loopAlien].base.x - lander[loopAlien].vx;
+         float groundY = lander[loopAlien].base.y - lander[loopAlien].vy;
+         float groundZ = lander[loopAlien].base.z - lander[loopAlien].vz;
+         if(lander[loopAlien].vx == 0 && lander[loopAlien].vz == 0 && lander[loopAlien].vy == 0){
             lander[loopAlien].state = 2;
             fodder[lander[loopAlien].targetID].gravity = 0;
+
+         // if(lander[loopAlien].target.x == lander[loopAlien].base.x && lander[loopAlien].target.y == lander[loopAlien].base.y && lander[loopAlien].target.z == lander[loopAlien].base.z){
+         //    lander[loopAlien].vx = 0;
+         //    lander[loopAlien].vy = 0;
+         //    lander[loopAlien].vz = 0;
+         }else if(/*check for ground*/(lander[loopAlien].vx != 0 && lander[loopAlien].vz != 0 )&&(
+            world[(int)groundX + 2][(int)groundY - 1][(int)groundZ - 2] == 9 || 
+            world[(int)groundX + 2][(int)groundY - 1][(int)groundZ - 1] == 9 || 
+            world[(int)groundX + 2][(int)groundY - 1][(int)groundZ] == 9 || 
+            world[(int)groundX + 2][(int)groundY - 1][(int)groundZ + 1] == 9 || 
+            world[(int)groundX + 2][(int)groundY - 1][(int)groundZ + 2] == 9 || 
+
+            world[(int)groundX - 2][(int)groundY - 1][(int)groundZ - 2] == 9 || 
+            world[(int)groundX - 2][(int)groundY - 1][(int)groundZ - 1] == 9 || 
+            world[(int)groundX - 2][(int)groundY - 1][(int)groundZ] == 9 || 
+            world[(int)groundX - 2][(int)groundY - 1][(int)groundZ + 1] == 9 || 
+            world[(int)groundX - 2][(int)groundY - 1][(int)groundZ + 2] == 9 || 
+
+            world[(int)groundX + 1][(int)groundY - 1][(int)groundZ - 2] == 9 || 
+            world[(int)groundX][(int)groundY - 1][(int)groundZ - 2] == 9 || 
+            world[(int)groundX - 1][(int)groundY - 1][(int)groundZ - 2] == 9 || 
+
+            world[(int)groundX + 1][(int)groundY - 1][(int)groundZ + 2] == 9 || 
+            world[(int)groundX][(int)groundY - 1][(int)groundZ - 1] == 9 || 
+            world[(int)groundX - 1][(int)groundY - 1][(int)groundZ + 2] == 9 ||
+            /*check for ice*/
+            world[(int)groundX + 2][(int)groundY - 1][(int)groundZ - 2] == 15 || 
+            world[(int)groundX + 2][(int)groundY - 1][(int)groundZ - 1] == 15 || 
+            world[(int)groundX + 2][(int)groundY - 1][(int)groundZ] == 15 || 
+            world[(int)groundX + 2][(int)groundY - 1][(int)groundZ + 1] == 15 || 
+            world[(int)groundX + 2][(int)groundY - 1][(int)groundZ + 2] == 15 || 
+
+            world[(int)groundX - 2][(int)groundY - 1][(int)groundZ - 2] == 15 || 
+            world[(int)groundX - 2][(int)groundY - 1][(int)groundZ - 1] == 15 || 
+            world[(int)groundX - 2][(int)groundY - 1][(int)groundZ] == 15 || 
+            world[(int)groundX - 2][(int)groundY - 1][(int)groundZ + 1] == 15 || 
+            world[(int)groundX - 2][(int)groundY - 1][(int)groundZ + 2] == 15 || 
+
+            world[(int)groundX + 1][(int)groundY - 1][(int)groundZ - 2] == 15 || 
+            world[(int)groundX][(int)groundY - 1][(int)groundZ - 2] == 15 || 
+            world[(int)groundX - 1][(int)groundY - 1][(int)groundZ - 2] == 15 || 
+
+            world[(int)groundX + 1][(int)groundY - 1][(int)groundZ + 2] == 15 || 
+            world[(int)groundX][(int)groundY - 1][(int)groundZ - 1] == 15 || 
+            world[(int)groundX - 1][(int)groundY - 1][(int)groundZ + 2] == 15 
+            )){
+               //printf("a lander hit the ground\n");
+               if(lander[loopAlien].stall <= 0){
+                  lander[loopAlien].vx *= -0.5;
+                  lander[loopAlien].vy = 0.1;
+                  lander[loopAlien].vz *= -0.5;
+               }
+               lander[loopAlien].stall = 30;
+               
+
+
+
+
+
+
+
+
          }
+         
+         if(lander[loopAlien].stall <=0){
+            lander[loopAlien].base.x -= lander[loopAlien].vx;
+            lander[loopAlien].base.z -= lander[loopAlien].vz;
+            lander[loopAlien].base.y -= lander[loopAlien].vy;
+            if(lander[loopAlien].vx == 0 && lander[loopAlien].vy == 0 && lander[loopAlien].vz == 0){
+               lander[loopAlien].state = 2;
+               fodder[lander[loopAlien].targetID].gravity = 0;
+            }
+         } else if(lander[loopAlien].stall >=0){
+            lander[loopAlien].stall--;
+
+            lander[loopAlien].base.x -= lander[loopAlien].vx;
+            lander[loopAlien].base.z -= lander[loopAlien].vz;
+            lander[loopAlien].base.y += lander[loopAlien].vy;
+
+            if(lander[loopAlien].stall <=0){
+               lander[loopAlien].vx = (lander[loopAlien].base.x - lander[loopAlien].target.x) /100;
+               lander[loopAlien].vy = (lander[loopAlien].base.y - lander[loopAlien].target.y) /100;
+               lander[loopAlien].vz = (lander[loopAlien].base.z - lander[loopAlien].target.z) /100;
+
+
+            }
+
+
+
+
+         }
+ 
+
+         
          
       }else if(lander[loopAlien].state == 2){
          if( lander[loopAlien].base.y + lander[loopAlien].vy > 44 ){
-            lander[loopAlien].visible = 0;
+            //lander[loopAlien].visible = 0;
+            if(lander[loopAlien].type == 1){
+               lander[loopAlien].state = 3;
+               printf("Human lost to alien abduction\n");
+            }
+            lander[loopAlien].type = 6;//change it to attack mode
+            
+            
             removeHuman(fodder[ lander[loopAlien].targetID ].head.x, fodder[ lander[loopAlien].targetID ].head.y, fodder[ lander[loopAlien].targetID ].head.z);
             fodder[ lander[loopAlien].targetID ].visible = 0;
          } else{
@@ -856,7 +1066,11 @@ void alienMovement(){
          }
          
       }else if(lander[loopAlien].state == 3){
-         if(lander[loopAlien].searchingHeight <= lander[loopAlien].base.y){
+         if(lander[loopAlien].searchingHeight < lander[loopAlien].base.y - 1){
+            lander[loopAlien].vy = -0.4;
+            lander[loopAlien].base.y += lander[loopAlien].vy;
+
+         }else if(lander[loopAlien].searchingHeight <= lander[loopAlien].base.y + 1 && lander[loopAlien].searchingHeight >= lander[loopAlien].base.y - 1){
             lander[loopAlien].target.x = 0;
             lander[loopAlien].target.y = 0;
             lander[loopAlien].target.z = 0;
@@ -866,19 +1080,19 @@ void alienMovement(){
             int randVelo, randVeloZ;
             randVelo = rand() % 4;
             if(randVelo == 0){
-               lander[loopAlien].vx = 0.1;
+               lander[loopAlien].vx = 0.15;
             }
             if(randVelo == 1){
-               lander[loopAlien].vx = -0.1;
+               lander[loopAlien].vx = -0.2;
             }
             if(randVelo == 2){
                lander[loopAlien].vx = 0.3;
             }
             if(randVelo == 3){
-               lander[loopAlien].vx = -0.3;
+               lander[loopAlien].vx = -0.35;
             }
             if(randVelo == 4){
-               lander[loopAlien].vx = 0.2;
+               lander[loopAlien].vx = 0.25;
             }
 
             //this loop prevents the alien having the same x and z velo causing it to get stuck in the long diagonal of the world
@@ -887,19 +1101,19 @@ void alienMovement(){
             }while(randVelo == randVeloZ);
             
             if(randVeloZ == 0){
-               lander[loopAlien].vz = 0.1;
+               lander[loopAlien].vz = 0.15;
             }
             if(randVeloZ == 1){
-               lander[loopAlien].vz = -0.1;
+               lander[loopAlien].vz = -0.2;
             }
             if(randVeloZ == 2){
                lander[loopAlien].vz = 0.3;
             }
             if(randVeloZ == 3){
-               lander[loopAlien].vz = -0.3;
+               lander[loopAlien].vz = -0.35;
             }
             if(randVeloZ == 4){
-               lander[loopAlien].vz = 0.2;
+               lander[loopAlien].vz = 0.25;
             }
 
 
@@ -912,7 +1126,7 @@ void alienMovement(){
       }
 
       if(lander[loopAlien].visible == 1){
-         drawLander( (int)lander[loopAlien].base.x, (int)lander[loopAlien].base.y, (int)lander[loopAlien].base.z);
+         drawLander( (int)lander[loopAlien].base.x, (int)lander[loopAlien].base.y, (int)lander[loopAlien].base.z, lander[loopAlien].type);
       }
    } 
 
@@ -1131,7 +1345,7 @@ void removeRayLoop(){
    for(rayLoop=0; rayLoop < TUBE_COUNT; rayLoop++){
       if(tubeVisible[rayLoop] == 1){
          ftime(&shotClock);
-         if(myRays[rayLoop].shotAt.time < shotClock.time - 2){
+         if(myRays[rayLoop].shotAt.time < shotClock.time - 1.5){
             tubeVisible[rayLoop] = 0;
          }
       }      
@@ -1141,7 +1355,7 @@ void removeRayLoop(){
 }
 
 
-	/*** collisionResponse() ***/
+/*** collisionResponse() ***/
 	/* -performs collision detection and response */
 	/*  sets new xyz  to position of the viewpoint after collision */
 	/* -can also be used to implement gravity by updating y position of vp*/
@@ -1213,7 +1427,7 @@ void collisionResponse() {
 }
 
 
-	/******* draw2D() *******/
+/******* draw2D() *******/
 	/* draws 2D shapes on screen */
 	/* use the following functions: 			*/
 	/*	draw2Dline(int, int, int, int, int);		*/
@@ -1240,7 +1454,7 @@ void draw2D() {
    } else {
 	/* your code goes here */
 
-     //loop for rays
+      //loop for rays
       int rayLoop;
       int rayBX, rayBZ, rayEX, rayEZ;
 
@@ -1296,6 +1510,12 @@ void draw2D() {
                if( (110 - rayEZ) > 110 ){
                   rayEZ = 0;
                }
+               if(tubeColour[rayLoop] == 2){
+                  set2Dcolour(purple);
+               }else if(tubeColour[rayLoop] == 3){
+                  set2Dcolour(red);
+               }
+
                draw2Dline(screenWidth - ((110 * smallW) - (rayBX * smallW)), screenHeight - ((110 * smallH) - (rayBZ * smallH)), screenWidth - ((110 * smallW) - (rayEX * smallW)), screenHeight - ((110 * smallH) - (rayEZ * smallH)), 2);
             }
          }      
@@ -1477,11 +1697,11 @@ void draw2D() {
 }
 
 
-	/*** update() ***/
+/*** update() ***/
 	/* background process, it is called when there are no other events */
 	/* -used to control animations and perform calculations while the  */
 	/*  system is running */
-	/* -gravity must also implemented here, duplicate collisionResponse */
+   /* -gravity must also implemented here, duplicate collisionResponse */
 void update() {
    //int i, j, k, loop;
    float *la;
@@ -1582,7 +1802,7 @@ void update() {
 }
 
 
-	/* called by GLUT when a mouse button is pressed or released */
+/* called by GLUT when a mouse button is pressed or released */
 	/* -button indicates which button was pressed or released */
 	/* -state indicates a button down or button up event */
 	/* -x,y are the screen coordinates when the mouse is pressed or */
@@ -1627,32 +1847,32 @@ int main(int argc, char** argv){
 	/* The testworld is only guaranteed to work with a world of
 		with dimensions of 100,50,100. */
    if (testWorld == 1) {
-	/* initialize world to empty */
+	   /* initialize world to empty */
       for(i=0; i<WORLDX; i++)
          for(j=0; j<WORLDY; j++)
             for(k=0; k<WORLDZ; k++)
                world[i][j][k] = 0;
 
-	/* some sample objects */
-	/* build a red platform */
+	   /* some sample objects */
+	   /* build a red platform */
       for(i=0; i<WORLDX; i++) {
          for(j=0; j<WORLDZ; j++) {
             world[i][24][j] = 3;
          }
       }
-	/* create some green and blue cubes */
+	   /* create some green and blue cubes */
       world[50][25][50] = 1;
       world[49][25][50] = 1;
       world[49][26][50] = 1;
       world[52][25][52] = 2;
       world[52][26][52] = 2;
 
-	/* create user defined colour and draw cube */
+	   /* create user defined colour and draw cube */
       setUserColour(9, 0.7, 0.3, 0.7, 1.0, 0.3, 0.15, 0.3, 1.0);
       world[54][25][50] = 9;
 
 
-	/* blue box shows xy bounds of the world */
+	   /* blue box shows xy bounds of the world */
       for(i=0; i<WORLDX-1; i++) {
          world[i][25][0] = 2;
          world[i][25][WORLDZ-1] = 2;
@@ -1662,12 +1882,12 @@ int main(int argc, char** argv){
          world[WORLDX-1][25][i] = 2;
       }
 
-	/* create two sample mobs */
-	/* these are animated in the update() function */
+	   /* create two sample mobs */
+	   /* these are animated in the update() function */
       createMob(0, 50.0, 25.0, 52.0, 0.0);
       createMob(1, 50.0, 25.0, 52.0, 0.0);
 
-	/* create sample player */
+	   /* create sample player */
       createPlayer(0, 52.0, 27.0, 52.0, 0.0);
    } else if(foot == 1){
 	   /* your code to build the world goes here */
@@ -1727,7 +1947,9 @@ int main(int argc, char** argv){
             height = atoi(str);
             height = height / 25;    //early front runner is 25 for choice      
                
-
+            // if(i == 40){
+            //    height = 25;
+            // }
             do{
                if( height > 8){
                   world[i][height][j] = 5;//snow
@@ -1774,13 +1996,13 @@ int main(int argc, char** argv){
             random = 2;
          }
 
-         while( world[xVal][6][random] == 0 || world[xVal+2][8][random] != 0|| world[xVal-2][8][random] != 0 || world[xVal][8][random+2] != 0 || world[xVal][8][random-2] != 0 || world[xVal+1][8][random] != 0|| world[xVal-1][8][random] != 0 || world[xVal][8][random+1] != 0 || world[xVal][8][random-1] != 0){
-            random ++;
-            if(random > 97){
-               random = 2;
-            }
+         // while( world[xVal][6][random] == 0 || world[xVal+2][8][random] != 0|| world[xVal-2][8][random] != 0 || world[xVal][8][random+2] != 0 || world[xVal][8][random-2] != 0 || world[xVal+1][8][random] != 0|| world[xVal-1][8][random] != 0 || world[xVal][8][random+1] != 0 || world[xVal][8][random-1] != 0){
+         //    random ++;
+         //    if(random > 97){
+         //       random = 2;
+         //    }
 
-         }
+         // }
 
          //create a loop here to loop throught the start at one unit above highest possible ground at these x, z coordinates to find the ground and place the people from there
          for( groundLevel = 11; groundLevel>0; groundLevel-- ){
@@ -1866,19 +2088,19 @@ int main(int argc, char** argv){
 
          randVelo = rand() % 4;
          if(randVelo == 0){
-            lander[loop].vx = 0.1;
+            lander[loop].vx = 0.15;
          }
          if(randVelo == 1){
-            lander[loop].vx = -0.1;
+            lander[loop].vx = -0.2;
          }
          if(randVelo == 2){
             lander[loop].vx = 0.3;
          }
          if(randVelo == 3){
-            lander[loop].vx = -0.3;
+            lander[loop].vx = -0.35;
          }
          if(randVelo == 4){
-            lander[loop].vx = 0.2;
+            lander[loop].vx = 0.25;
          }
 
       //this loop prevents the alien having the same x and z velo causing it to get stuck in the long diagonal of the world
@@ -1887,28 +2109,33 @@ int main(int argc, char** argv){
          }while(randVelo == randVeloZ);
          
          if(randVeloZ == 0){
-            lander[loop].vz = 0.1;
+            lander[loop].vz = 0.15;
          }
          if(randVeloZ == 1){
-            lander[loop].vz = -0.1;
+            lander[loop].vz = -0.2;
          }
          if(randVeloZ == 2){
             lander[loop].vz = 0.3;
          }
          if(randVeloZ == 3){
-            lander[loop].vz = -0.3;
+            lander[loop].vz = -0.35;
          }
          if(randVeloZ == 4){
-            lander[loop].vz = 0.2;
+            lander[loop].vz = 0.25;
          }
 
          // lander[loop].vx = 0.5;
          // lander[loop].vz = 0.5;
          lander[loop].vy = 0; // because initial state is searching so it should not move vertically initially
          lander[loop].state = 0;
+         lander[loop].type = 1;
          lander[loop].searchingHeight = lander[loop].base.y;
+         lander[loop].stall = 0;
+         lander[loop].playerLoc.x = 0;
+         lander[loop].playerLoc.y = 0;
+         lander[loop].playerLoc.z = 0;
 
-         drawLander((int)lander[loop].base.x, (int)lander[loop].base.y, (int)lander[loop].base.z);
+         drawLander((int)lander[loop].base.x, (int)lander[loop].base.y, (int)lander[loop].base.z, lander[loop].type);
 
       }
 

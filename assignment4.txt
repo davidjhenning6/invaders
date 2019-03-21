@@ -1,0 +1,167 @@
+ 
+- Assignment 4 - Collisions and Enemy Opponents
+- ---------------------------------------------
+- Due. March 22, 2019
+- 
+- Add collision detection and responses between pairs of aliens and between
+- aliens and the ground. Add the ability of aliens to transform into opponents
+- who will shoot at the player.
+- 
+- 
+- 1. Collision Between Pairs of Aliens
+- ------------------------------------
+- When two aliens collide they should move away from (bounce off) each other.
+- The collision occurs when parts of two aliens (cubes) would try to occupy
+- the same space. 
+- 
+- It doesn't matter what algorithm you use to make the aliens move away from
+- each other as long as they separate and move in different directions.
+- Simply reversing their direction is a reasonable choice. Alternatively, you
+- can calculate the reflection of two objects at the point of collision if you
+- wish.
+- 
+- Movement away from each other should be in the xz plane at a minimum.
+- You can make them move away in three dimensions if you wish.
+- 
+- The aliens should move away from each other for a short time after the
+- collision.  The collision should interrupt what the alien was doing.
+- After they have moved some distance away from each other they
+- should both return to normal activities, such as:
+- 	-searching
+- 	-moving towards a human
+- 	-flying away with a human
+- 
+- Aliens can repeatedly bounce off of each other. 
+- 
+- You will need to create enough aliens at the start of the game so 
+- the teaching assistant can easily see them collide. Make the time and
+- distance the aliens move after a collision easy for the teaching
+- assistant to see.
+- 
+- 
+- 
+- 2. Collisions Between Aliens and the Ground
+- -------------------------------------------
+- When an alien collides with the ground they should bounce back for a
+- short time.  This is similar to the collisions between aliens in part 1.
+- The main difference is that aliens who collide with the ground should
+- bounce upwards (in the y axis) after a collision. 
+- 
+- The upward motion should last for a short time and then the alien should
+- return to its normal activities.
+- 
+- Aliens can repeatedly collide with the ground. They do not need to be
+- intelligent enough to try to avoid repeatedly colliding with the ground. 
+- 
+- Pick a time and a distance for the upward motion that are easy for the
+- teaching assistant to see. They response to the collision should not be so
+- quick that the TA cannot see the effect.
+- 
+- 
+- 3. Alien Opponents
+- ------------------
+- If an alien successfully picks up a human and reaches the top of the screen
+- they should transform into a different type of alien that will shoot at the
+- player.
+- 
+- The alien transformation involves:
+- 	-changing that alien's colour (you can stop drawing the human it was
+- 	 carrying at this point)
+- 	-the alien should start to shoot at the player
+- 
+- The algorithm for shooting at the player is:
+- 	-determine the player's location (x,y,z)
+- 	-wait a short time (one half or one quarter second is a good initial
+- 	 time but you should experiment with different times)
+- 	-shoot at the player using a tube (shoot in a straight line as in
+- 	 assignment 2)
+- 	-if the ray intersects with the player then print a message indicating
+- 	 the player was hit
+- Pick a maximum range parameter for the aliens to be able to shoot. They should
+- not be able to shoot across the entire game world. A range between 10 and 20
+- is probably reasonable to start but you should experiment with different
+- ranges until you find one that works well.
+- 
+- Do not use sleep() for timing. It will slow the entire game.
+- 
+- Aliens can continually shoot at the player even if they are out of range.
+- Alternatively, they can only shoot when the player when they are in range.
+- You can choose which of these behaviours you prefer.
+- 
+- The movement of the transformed aliens can be either the regular search
+- behaviour from the previous assignment or you can make the aliens move
+- slowly towards the player. 
+- 
+- You can treat the shooting aliens as a different state machine than the
+- one developed for assignment 2 or you can add more states to the assignment 2
+- state machine. 
+- 
+- 
+- Parameter Choices
+- -----------------
+- As usual, pick parameters that will allow the teaching assistant to easily
+- see the collisions and transformation of aliens. The operations of the game
+- should be readily visible once the game starts. It should not require many
+- attempts to run the game or for the game to run for a long time to view
+- the collisions between the aliens, the collisions between the alien and
+- the ground, and the transformation of an alien into one which shoots at
+- the player.
+- 
+- 
+- Readme File
+- -----------
+- List any limitations or choices you made which may make it easier for the
+- teaching assistant to mark the assignment. For instance:
+- 	-placing aliens near each other at the start of the game so they are
+- 	 likely to collide with each other
+- 	-starting aliens near the ground so they will quickly collide with
+- 	 the ground 
+- 	-creating aliens that are already transformed to ones which will
+- 	 shoot at the player at the start of the game
+- The above choices may be useful if some of the features from earlier assignments
+- have not been completed.
+- 
+- List anything else that the teaching assistant might need to know to mark
+- your assignment in the readme file.
+- 
+- 
+- Coding Practices
+- ----------------
+- Write the code using standard stylistic practices. Use functions, 
+- reasonable variable names, and consistent indentation.
+- If the code is difficult for the TA to understand then you
+- will lose marks.
+- 
+- As usual, keep backups of your work using source control software.
+- 
+- 
+- Starting Code
+- -------------
+- The starting code is available on the Courselink site.
+- You can untar the file using tar xf filename.
+- 
+- Note that the graphics code may be modified for later assignments. If you
+- make changes to the graphics code (in graphics.c or visible.c) then you
+- may have to recode the changes for a later assignment.
+-   
+- 
+- Submitting the Assignment
+- -------------------------
+- NOTE: The assignment executable is named a1. Other files can be
+- named with any reasonable filenames.
+- 
+- Submit the assignment using Courselink. Submit the files needed to
+- build and run your program. Do not submit compiled code. Do submit the
+- file used to build the height map (ground.pgm).  Bundle the code in a tar file.
+- 
+- Include a makefile that will compile the executable. Name the executable a1.
+-  
+- The TA will unpack your code and type "make". They will then try to
+- run an executable named "./a1".  If the make command or executing a1
+- does not work then you will lose a substantial number of marks.
+- 
+- It is always a good idea to unpack and test the file you are submitting
+- to be sure that what you submit actually compiles and runs. 
+
+
+
