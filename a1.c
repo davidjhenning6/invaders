@@ -650,6 +650,11 @@ void alienMovement(){
    for(loopAlien=1; loopAlien<ALIEN_COUNT*2; loopAlien++){
       tempVelo[loopAlien] = 1;
    }
+   for(humanLoop = 0; humanLoop<BODY_COUNT; humanLoop++){
+      if(world[(int)fodder[humanLoop].head.x][(int)fodder[humanLoop].head.y][(int)fodder[humanLoop].head.z] == 0 && fodder[humanLoop].visible == 1){
+         world[(int)fodder[humanLoop].head.x][(int)fodder[humanLoop].head.y][(int)fodder[humanLoop].head.z] = 3;
+      }
+   }
 
    //llop through each lander
    for(loopAlien = 1; loopAlien < ALIEN_COUNT; loopAlien++){
@@ -839,23 +844,23 @@ void alienMovement(){
          
    /************ state == 1 bee line to human head ************/
       }else if(lander[loopAlien].state == 1 && lander[loopAlien].visible == 1 ){
-         if( lander[loopAlien].base.y <= lander[loopAlien].target.y){// && lander[loopAlien].base.x <= lander[loopAlien].target.x && lander[loopAlien].base.z <= lander[loopAlien].target.z ){
+         if( (int)lander[loopAlien].base.y <= (int)lander[loopAlien].target.y){// && lander[loopAlien].base.x <= lander[loopAlien].target.x && lander[loopAlien].base.z <= lander[loopAlien].target.z ){
             lander[loopAlien].vy = 0;
-
          //this seems to work
             // lander[loopAlien].vx = lander[loopAlien].base.x - lander[loopAlien].target.x;
             // lander[loopAlien].vz = lander[loopAlien].base.z - lander[loopAlien].target.z;
             lander[loopAlien].base.x = lander[loopAlien].target.x;
             lander[loopAlien].base.z = lander[loopAlien].target.z;
-
-            
-         }
-         if(lander[loopAlien].base.x == lander[loopAlien].target.x){
             lander[loopAlien].vx = 0;
-         }
-         if(lander[loopAlien].base.z == lander[loopAlien].target.z){
             lander[loopAlien].vz = 0;
+
          }
+         // if(lander[loopAlien].base.x == lander[loopAlien].target.x){
+         //    lander[loopAlien].vx = 0;
+         // }
+         // if(lander[loopAlien].base.z == lander[loopAlien].target.z){
+         //    lander[loopAlien].vz = 0;
+         // }
 
    /************ state == 2 abduct human ************/
       }else if(lander[loopAlien].state == 2 && lander[loopAlien].visible == 1 ){
@@ -959,6 +964,8 @@ void alienMovement(){
          //    lander[loopAlien].vx = 0;
          //    lander[loopAlien].vy = 0;
          //    lander[loopAlien].vz = 0;
+         
+         //change to check if not human?
          }else if(/*check for ground*/(lander[loopAlien].vx != 0 && lander[loopAlien].vz != 0 )&&(
             world[(int)groundX + 2][(int)groundY - 1][(int)groundZ - 2] == 9 || 
             world[(int)groundX + 2][(int)groundY - 1][(int)groundZ - 1] == 9 || 
@@ -1019,6 +1026,58 @@ void alienMovement(){
          }
          
          if(lander[loopAlien].stall <=0){
+            //check if it hits another lander here 
+
+            for(aaCollision=1; aaCollision<ALIEN_COUNT; aaCollision++){ //check location of the other landers loop through the other landers
+               //check if aa collision doesn't equal loopAlien so you don't compare position too itself
+               if(aaCollision != loopAlien){
+                  //check if the landers are on the same height ::check if the y values are within 5 of each other
+                  if( (lander[loopAlien].base.y < lander[aaCollision].base.y + 5 && lander[loopAlien].base.y >= lander[aaCollision].base.y ) || (lander[aaCollision].base.y < lander[loopAlien].base.y + 5 && lander[aaCollision].base.y >= lander[loopAlien].base.y ) ){ 
+                     //check if landers are within x +-5 and z+-5 of eachother
+                     if( (lander[aaCollision].base.x <= lander[loopAlien].base.x+5 && lander[aaCollision].base.x >= lander[loopAlien].base.x) || (lander[aaCollision].base.x >= lander[loopAlien].base.x-5 && lander[aaCollision].base.x <= lander[loopAlien].base.x) ){
+                        //check for z like above
+                        if( (lander[aaCollision].base.z <= lander[loopAlien].base.z+5 && lander[aaCollision].base.z >= lander[loopAlien].base.z) || (lander[aaCollision].base.z >= lander[loopAlien].base.z-5 && lander[aaCollision].base.z <= lander[loopAlien].base.z) ){
+                           //A collision has occured!!!! flip velos of and set stall so once stall has expired the aliens will recalc their routes
+            
+                           lander[loopAlien].stall = 30;
+                           
+                           //check x velos
+                           if(lander[aaCollision].vx < 0 && lander[loopAlien].vx > 0){
+                              lander[loopAlien].vx *= -1;
+
+                           }else if(lander[aaCollision].vx > 0 && lander[loopAlien].vx < 0){
+                              lander[loopAlien].vx *= -1;
+                           }else if(lander[aaCollision].vx > 0 && lander[loopAlien].vx > 0){
+                              lander[loopAlien].vx *= lander[aaCollision].vx;
+                           }else if(lander[aaCollision].vx < 0 && lander[loopAlien].vx < 0){
+                              lander[loopAlien].vx *= lander[aaCollision].vx;
+                           }
+                           //check z velos
+                           if(lander[aaCollision].vz < 0 && lander[loopAlien].vz > 0){
+                              lander[loopAlien].vz *= -1;
+                           }else if(lander[aaCollision].vz > 0 && lander[loopAlien].vz < 0){
+                              lander[loopAlien].vz *= -1;
+                           }else if(lander[aaCollision].vz > 0 && lander[loopAlien].vz > 0){
+                              lander[loopAlien].vz *= lander[aaCollision].vz;
+                           }else if(lander[aaCollision].vz < 0 && lander[loopAlien].vz < 0){
+                              lander[loopAlien].vz *= lander[aaCollision].vz;
+                           }
+                        }
+                     }
+                  }
+               }
+            }
+
+
+
+
+            //end lander check here should of set the velos before this point if they need to be changed because of a collision
+            if( lander[loopAlien].base.x - lander[loopAlien].vx > 97 || lander[loopAlien].base.x - lander[loopAlien].vx < 2 ){
+               lander[loopAlien].vx *= -1;
+            }
+            if( lander[loopAlien].base.z - lander[loopAlien].vz > 97 || lander[loopAlien].base.z - lander[loopAlien].vz < 2 ){
+               lander[loopAlien].vz *= -1;
+            }
             lander[loopAlien].base.x -= lander[loopAlien].vx;
             lander[loopAlien].base.z -= lander[loopAlien].vz;
             lander[loopAlien].base.y -= lander[loopAlien].vy;
@@ -1029,6 +1088,13 @@ void alienMovement(){
          } else if(lander[loopAlien].stall >=0){
             lander[loopAlien].stall--;
 
+            if( lander[loopAlien].base.x - lander[loopAlien].vx > 97 || lander[loopAlien].base.x - lander[loopAlien].vx < 2 ){
+               lander[loopAlien].vx *= -1;
+            }
+            if( lander[loopAlien].base.z - lander[loopAlien].vz > 97 || lander[loopAlien].base.z - lander[loopAlien].vz < 2 ){
+               lander[loopAlien].vz *= -1;
+            }
+
             lander[loopAlien].base.x -= lander[loopAlien].vx;
             lander[loopAlien].base.z -= lander[loopAlien].vz;
             lander[loopAlien].base.y += lander[loopAlien].vy;
@@ -1037,18 +1103,9 @@ void alienMovement(){
                lander[loopAlien].vx = (lander[loopAlien].base.x - lander[loopAlien].target.x) /100;
                lander[loopAlien].vy = (lander[loopAlien].base.y - lander[loopAlien].target.y) /100;
                lander[loopAlien].vz = (lander[loopAlien].base.z - lander[loopAlien].target.z) /100;
-
-
             }
-
-
-
-
          }
  
-
-         
-         
       }else if(lander[loopAlien].state == 2){
          if( lander[loopAlien].base.y + lander[loopAlien].vy > 44 ){
             //lander[loopAlien].visible = 0;
