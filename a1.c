@@ -656,7 +656,7 @@ void alienMovement(){
       }
    }
 
-   //llop through each lander
+   //loop through each lander
    for(loopAlien = 1; loopAlien < ALIEN_COUNT; loopAlien++){
       //if state is searching
    /************ state == 0 searching ************/
@@ -2072,7 +2072,7 @@ int main(int argc, char** argv){
          fodder[loop].visible = 1;
 
       //make human effected by gravity
-         fodder[loop].gravity = 1;
+         fodder[loop].gravity = 0;
 
       //make human not marked for death (killed on collision with ground) be default
          fodder[loop].markedForDeath = 0;
@@ -2101,6 +2101,9 @@ int main(int argc, char** argv){
          world[xVal][groundLevel + 2][random] = 3;//head red
          world[xVal][groundLevel + 1][random] = 4;//body black
          world[xVal][groundLevel][random] = 7;//feet orange
+         if(groundLevel > 10){
+            printf("license and registration: %d\n", loop);
+         }
 
       }
    //*************** load aliens/Landers into the world ***************//
