@@ -1,6 +1,8 @@
 # invaders
 cis4820 Assignments
 
+A 3D alien invaders style game made in c using OpenGL for the guelph university game programming course
+
 
 /**************
 Dave Henning
