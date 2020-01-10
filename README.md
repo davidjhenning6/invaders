@@ -1,6 +1,30 @@
 # invaders
 cis4820 Assignments
 
+controls for invaders
+q → quit
+w → forward
+a → strafe left
+s → strafe right
+d → backwards
+f → fly control (toggles the ability to move in the y axis)
+m → toggle map display
+    1 small top right 
+    2 large center
+    3 hide
+left mouse button → fire ray
+mouse cursor → used to control direction
+
+features implemented
+
+collision detection using bounding boxes to detect collision between aliens,ground and player implemented using bounding boxes
+hit detection of ray for detecting shot aliens and humans
+basic ai created for aliens 4 states searching for human, heading toward human, abducting human and if a human is succesfully abducted the alien will change colour and start shooting the player
+lives implemented so the player will die if they are shot enough times
+
+
+
+
 
 ###############
 Dave Henning
