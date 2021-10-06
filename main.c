@@ -1,8 +1,7 @@
 /**************
 Dave Henning
-0921760
-cis4820
-Assignment 1-4
+3D defenders project
+OpenCL
 ***************/
 
 /* Derived from scene.c in the The OpenGL Programming Guide */
@@ -199,7 +198,7 @@ struct timeb newAT;
 //for removing rays from the screen
 struct timeb shotClock;
 
-//func def for a2 for firing a tube called in mouse
+//func def for firing a tube called in mouse
 int rayCount = 0;
 // struct with sys time and int id
 typedef struct RayShot{
