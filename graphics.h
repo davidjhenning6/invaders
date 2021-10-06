@@ -5,6 +5,7 @@
 #include <GLUT/glut.h>
 #endif
 
+
         /* world size and storage array */
 #define WORLDX 100
 #define WORLDY 50
