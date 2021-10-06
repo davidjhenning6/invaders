@@ -1,8 +1,7 @@
 /**************
 Dave Henning
-0921760
-cis4820
-Assignment 1
+Defenders 3D implementation
+OpenCL
 ***************/
 
 /* Derived from scene.c in the The OpenGL Programming Guide */
