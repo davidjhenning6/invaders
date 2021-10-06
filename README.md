@@ -1,5 +1,5 @@
 # invaders
-cis4820 Assignments
+a 3D implementation of the Defenders(1981) arcade game using OpenCL.
 
 controls for invaders
 
@@ -41,8 +41,8 @@ lives implemented so the player will die if they are shot enough times
 
 ###############
 Dave Henning
-cis4820
-#Assignment 1
+TODO List
+Stretch 1
 ###############
 ############################################ 1. Finish collision detection ############################################
     ---------------------DONE---------------------
@@ -93,8 +93,8 @@ time.h's time(NULL) may not be accurate enough!
 
 ###############
 Dave Henning
-cis4820
-#Assignment 2
+TODO List
+Stretch 2
 ###############
 
 
@@ -189,8 +189,8 @@ cis4820
     
 #################
 Dave Henning
-cis4820
-#Assignment 3
+TODO List
+Stretch 3
 #################
 
 
@@ -317,8 +317,11 @@ must add an visible value to human to control if they are shown on the map or no
 //reset the target to 0 so other aliens don't mistake the currently picked one with one dropped
 //redundent here since it doesn't exist anymore but will be needed when the alien is the thing shot
 
-
-### Assignment 4 ###
+#################
+Dave Henning
+TODO List
+Stretch 4
+#################
 
 ##FIXED:: Error found shooting a purple alien has them drop a human that doens't die
 
